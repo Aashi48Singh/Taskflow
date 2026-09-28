@@ -136,6 +136,8 @@ function Dashboard() {
       });
 
       setShowModal(false);
+
+      window.dispatchEvent(new Event("taskUpdated"));
     } catch (error) {
       console.error("Create task error:", error);
       alert("Unable to connect to server");
@@ -172,6 +174,8 @@ function Dashboard() {
           task._id === taskId ? data.task : task
         )
       );
+
+      window.dispatchEvent(new Event("taskUpdated"));
     } catch (error) {
       console.error("Complete task error:", error);
       alert("Unable to update task");
@@ -214,6 +218,8 @@ function Dashboard() {
           (task) => task._id !== taskId
         )
       );
+
+      window.dispatchEvent(new Event("taskUpdated"));
     } catch (error) {
       console.error("Delete task error:", error);
       alert("Unable to delete task");
@@ -254,80 +260,73 @@ function Dashboard() {
   // =========================
   // FILTER TASKS
   // =========================
- const filteredTasks = useMemo(() => {
-  const now = new Date();
 
-  return tasks.filter((task) => {
-    // ALL
-    if (activeFilter === "All") {
+  const filteredTasks = useMemo(() => {
+    const now = new Date();
+
+    return tasks.filter((task) => {
+      if (activeFilter === "All") {
+        return true;
+      }
+
+      if (activeFilter === "Completed") {
+        return task.status === "completed";
+      }
+
+      if (activeFilter === "Pending") {
+        return task.status === "pending";
+      }
+
+      if (activeFilter === "High") {
+        return task.priority === "high";
+      }
+
+      if (activeFilter === "Medium") {
+        return task.priority === "medium";
+      }
+
+      if (activeFilter === "Low") {
+        return task.priority === "low";
+      }
+
+      if (activeFilter === "Today") {
+        if (!task.dueDate) {
+          return false;
+        }
+
+        const due = new Date(task.dueDate);
+
+        return (
+          due.getFullYear() === now.getFullYear() &&
+          due.getMonth() === now.getMonth() &&
+          due.getDate() === now.getDate()
+        );
+      }
+
+      if (activeFilter === "Week") {
+        if (!task.dueDate) {
+          return false;
+        }
+
+        const due = new Date(task.dueDate);
+
+        const startOfToday = new Date(now);
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const sevenDaysLater = new Date(startOfToday);
+        sevenDaysLater.setDate(
+          sevenDaysLater.getDate() + 7
+        );
+
+        return (
+          due >= startOfToday &&
+          due <= sevenDaysLater
+        );
+      }
+
       return true;
-    }
-
-    // COMPLETED
-    if (activeFilter === "Completed") {
-      return task.status === "completed";
-    }
-
-    // PENDING
-    if (activeFilter === "Pending") {
-      return task.status === "pending";
-    }
-
-    // HIGH PRIORITY
-    if (activeFilter === "High") {
-      return task.priority === "high";
-    }
-
-    // MEDIUM PRIORITY
-    if (activeFilter === "Medium") {
-      return task.priority === "medium";
-    }
-
-    // LOW PRIORITY
-    if (activeFilter === "Low") {
-      return task.priority === "low";
-    }
-
-    // TODAY
-    if (activeFilter === "Today") {
-      if (!task.dueDate) {
-        return false;
-      }
-
-      const due = new Date(task.dueDate);
-
-      return (
-        due.getFullYear() === now.getFullYear() &&
-        due.getMonth() === now.getMonth() &&
-        due.getDate() === now.getDate()
-      );
-    }
-
-    // NEXT 7 DAYS
-    if (activeFilter === "Week") {
-      if (!task.dueDate) {
-        return false;
-      }
-
-      const due = new Date(task.dueDate);
-
-      const startOfToday = new Date(now);
-      startOfToday.setHours(0, 0, 0, 0);
-
-      const sevenDaysLater = new Date(startOfToday);
-      sevenDaysLater.setDate(
-        sevenDaysLater.getDate() + 7
-      );
-
-      return (
-        due >= startOfToday &&
-        due <= sevenDaysLater
-      );
-    }
-
-    return true;
-  });
-}, [tasks, activeFilter]);
+    });
+  }, [tasks, activeFilter]);
 
   // =========================
   // RECENT ACTIVITY
@@ -358,13 +357,13 @@ function Dashboard() {
 
   return (
     <Layout activePage="Dashboard">
-      <div className="p-5 lg:p-7 xl:p-8">
+      <div className="p-4 sm:p-5 lg:p-6 xl:p-7">
 
         {/* =================================
             MAIN TWO COLUMN LAYOUT
         ================================= */}
 
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_440px] gap-7">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_400px] gap-5 lg:gap-6">
 
           {/* =================================
               LEFT SIDE
@@ -374,93 +373,101 @@ function Dashboard() {
 
             {/* HEADER */}
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-7">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 lg:mb-6">
+
               <div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2.5">
+
                   <Home
                     className="text-purple-600"
-                    size={29}
+                    size={25}
                   />
 
-                  <h2 className="text-3xl font-bold text-gray-900">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
                     Task Overview
                   </h2>
+
                 </div>
 
-                <p className="text-gray-500 mt-2 ml-10">
+                <p className="text-sm sm:text-base text-gray-500 mt-1.5 ml-9">
                   Manage your tasks efficiently
                 </p>
+
               </div>
 
               <button
                 onClick={() => setShowModal(true)}
-                className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-5 py-3 rounded-xl font-semibold shadow-sm transition"
+                className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition"
               >
-                <Plus size={19} />
+                <Plus size={18} />
                 Add New Task
               </button>
+
             </div>
 
             {/* =================================
                 PRIORITY STAT CARDS
             ================================= */}
 
-           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
 
-  <StatsCard
-    title="Total Tasks"
-    value={totalTasks}
-    icon={Home}
-    onClick={() => setActiveFilter("All")}
-    active={activeFilter === "All"}
-  />
+              <StatsCard
+                title="Total Tasks"
+                value={totalTasks}
+                icon={Home}
+                onClick={() => setActiveFilter("All")}
+                active={activeFilter === "All"}
+              />
 
-  <StatsCard
-    title="Low Priority"
-    value={lowPriority}
-    icon={Flame}
-    iconBg="bg-green-100"
-    iconColor="text-green-600"
-    onClick={() => setActiveFilter("Low")}
-    active={activeFilter === "Low"}
-  />
+              <StatsCard
+                title="Low Priority"
+                value={lowPriority}
+                icon={Flame}
+                iconBg="bg-green-100"
+                iconColor="text-green-600"
+                onClick={() => setActiveFilter("Low")}
+                active={activeFilter === "Low"}
+              />
 
-  <StatsCard
-    title="Medium Priority"
-    value={mediumPriority}
-    icon={Flame}
-    iconBg="bg-orange-100"
-    iconColor="text-orange-600"
-    onClick={() => setActiveFilter("Medium")}
-    active={activeFilter === "Medium"}
-  />
+              <StatsCard
+                title="Medium Priority"
+                value={mediumPriority}
+                icon={Flame}
+                iconBg="bg-orange-100"
+                iconColor="text-orange-600"
+                onClick={() => setActiveFilter("Medium")}
+                active={activeFilter === "Medium"}
+              />
 
-  <StatsCard
-    title="High Priority"
-    value={highPriority}
-    icon={Flame}
-    iconBg="bg-red-100"
-    iconColor="text-red-600"
-    onClick={() => setActiveFilter("High")}
-    active={activeFilter === "High"}
-  />
+              <StatsCard
+                title="High Priority"
+                value={highPriority}
+                icon={Flame}
+                iconBg="bg-red-100"
+                iconColor="text-red-600"
+                onClick={() => setActiveFilter("High")}
+                active={activeFilter === "High"}
+              />
 
-</div>
+            </div>
+
             {/* =================================
                 FILTER BAR
             ================================= */}
 
-            <div className="mt-5 bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+            <div className="mt-4 bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
 
-              <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-2.5 mb-4">
+
                 <Filter
                   className="text-purple-600"
-                  size={21}
+                  size={19}
                 />
 
-                <h3 className="font-semibold text-lg">
+                <h3 className="font-semibold text-base">
                   All Tasks
                 </h3>
+
               </div>
 
               <div className="flex gap-2 flex-wrap">
@@ -478,7 +485,7 @@ function Dashboard() {
                     onClick={() =>
                       setActiveFilter(filter)
                     }
-                    className={`px-5 py-2 rounded-lg text-sm font-medium transition ${
+                    className={`px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition ${
                       activeFilter === filter
                         ? "bg-purple-100 text-purple-600 border border-purple-500"
                         : "text-gray-600 hover:bg-gray-50"
@@ -495,29 +502,31 @@ function Dashboard() {
                 TASK LIST
             ================================= */}
 
-            <div className="mt-5 space-y-4">
+            <div className="mt-4 space-y-3">
 
               {loading ? (
-                <div className="bg-white rounded-2xl border p-10 text-center">
-                  <p className="text-gray-500">
+                <div className="bg-white rounded-2xl border p-8 text-center">
+                  <p className="text-sm text-gray-500">
                     Loading tasks...
                   </p>
                 </div>
               ) : filteredTasks.length === 0 ? (
-                <div className="bg-white rounded-2xl border p-10 text-center">
+                <div className="bg-white rounded-2xl border p-8 text-center">
 
-                  <div className="w-14 h-14 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+
                     <Plus
                       className="text-purple-600"
-                      size={25}
+                      size={22}
                     />
+
                   </div>
 
-                  <h3 className="text-xl font-semibold text-gray-800">
+                  <h3 className="text-lg font-semibold text-gray-800">
                     No tasks found
                   </h3>
 
-                  <p className="text-gray-500 mt-2">
+                  <p className="text-sm text-gray-500 mt-1.5">
                     Try another filter or create a new task.
                   </p>
 
@@ -534,180 +543,211 @@ function Dashboard() {
               )}
 
             </div>
+
           </div>
 
           {/* =================================
               RIGHT SIDE
           ================================= */}
 
-          <div className="space-y-5">
+          <div className="space-y-4">
 
             {/* =================================
                 TASK STATISTICS
             ================================= */}
 
-            <div className="bg-white rounded-2xl border border-purple-100 p-5 shadow-sm">
+            <div className="bg-white rounded-2xl border border-purple-100 p-4 shadow-sm">
 
-              <div className="flex items-center gap-2 mb-5">
+              <div className="flex items-center gap-2 mb-4">
+
                 <TrendingUp
                   className="text-purple-600"
-                  size={20}
+                  size={19}
                 />
 
-                <h3 className="font-semibold text-lg">
+                <h3 className="font-semibold text-base">
                   Task Statistics
                 </h3>
+
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
 
                 {/* TOTAL */}
-         <button
-  type="button"
-  onClick={() => setActiveFilter("All")}
-  className={`w-full text-left border rounded-xl p-4 transition ${
-    activeFilter === "All"
-      ? "border-purple-500 ring-2 ring-purple-100"
-      : "border-purple-100 hover:border-purple-300"
-  }`}
->
-  <div className="flex items-center gap-3">
 
-    <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center">
-      <ListTodo
-        className="text-purple-500"
-        size={18}
-      />
-    </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveFilter("All")}
+                  className={`w-full text-left border rounded-xl p-3 transition ${
+                    activeFilter === "All"
+                      ? "border-purple-500 ring-2 ring-purple-100"
+                      : "border-purple-100 hover:border-purple-300"
+                  }`}
+                >
 
-    <div>
-      <p className="text-xl font-bold text-gray-900">
-        {totalTasks}
-      </p>
+                  <div className="flex items-center gap-2.5">
 
-      <p className="text-xs text-gray-500">
-        Total Tasks
-      </p>
-    </div>
+                    <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
 
-  </div>
-</button>
+                      <ListTodo
+                        className="text-purple-500"
+                        size={17}
+                      />
+
+                    </div>
+
+                    <div>
+
+                      <p className="text-lg font-bold text-gray-900">
+                        {totalTasks}
+                      </p>
+
+                      <p className="text-xs text-gray-500">
+                        Total Tasks
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </button>
 
                 {/* COMPLETED */}
-                       <button
-  type="button"
-  onClick={() => setActiveFilter("Completed")}
-  className={`w-full text-left border rounded-xl p-4 transition ${
-    activeFilter === "Completed"
-      ? "border-green-500 ring-2 ring-green-100"
-      : "border-green-100 hover:border-green-300"
-  }`}
->
-  <div className="flex items-center gap-3">
 
-    <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center">
-      <CheckCircle2
-        className="text-green-500"
-        size={18}
-      />
-    </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveFilter("Completed")}
+                  className={`w-full text-left border rounded-xl p-3 transition ${
+                    activeFilter === "Completed"
+                      ? "border-green-500 ring-2 ring-green-100"
+                      : "border-green-100 hover:border-green-300"
+                  }`}
+                >
 
-    <div>
-      <p className="text-xl font-bold text-gray-900">
-        {completedTasks}
-      </p>
+                  <div className="flex items-center gap-2.5">
 
-      <p className="text-xs text-gray-500">
-        Completed
-      </p>
-    </div>
+                    <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
 
-  </div>
-</button>
-               
+                      <CheckCircle2
+                        className="text-green-500"
+                        size={17}
+                      />
+
+                    </div>
+
+                    <div>
+
+                      <p className="text-lg font-bold text-gray-900">
+                        {completedTasks}
+                      </p>
+
+                      <p className="text-xs text-gray-500">
+                        Completed
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </button>
+
                 {/* PENDING */}
-<button
-  type="button"
-  onClick={() => setActiveFilter("Pending")}
-  className={`w-full text-left border rounded-xl p-4 transition ${
-    activeFilter === "Pending"
-      ? "border-purple-500 ring-2 ring-purple-100"
-      : "border-purple-100 hover:border-purple-300"
-  }`}
->
-  <div className="flex items-center gap-3">
 
-    <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center">
-      <Clock3
-        className="text-purple-500"
-        size={18}
-      />
-    </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveFilter("Pending")}
+                  className={`w-full text-left border rounded-xl p-3 transition ${
+                    activeFilter === "Pending"
+                      ? "border-purple-500 ring-2 ring-purple-100"
+                      : "border-purple-100 hover:border-purple-300"
+                  }`}
+                >
 
-    <div>
-      <p className="text-xl font-bold text-gray-900">
-        {pendingTasks}
-      </p>
+                  <div className="flex items-center gap-2.5">
 
-      <p className="text-xs text-gray-500">
-        Pending
-      </p>
-    </div>
+                    <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
 
-  </div>
-</button>
+                      <Clock3
+                        className="text-purple-500"
+                        size={17}
+                      />
+
+                    </div>
+
+                    <div>
+
+                      <p className="text-lg font-bold text-gray-900">
+                        {pendingTasks}
+                      </p>
+
+                      <p className="text-xs text-gray-500">
+                        Pending
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </button>
+
                 {/* COMPLETION RATE */}
 
-               <button
-  type="button"
-  onClick={() => setActiveFilter("Completed")}
-  className={`w-full text-left border rounded-xl p-4 transition ${
-    activeFilter === "Completed"
-      ? "border-purple-500 ring-2 ring-purple-100"
-      : "border-purple-100 hover:border-purple-300"
-  }`}
->
-  <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveFilter("Completed")}
+                  className={`w-full text-left border rounded-xl p-3 transition ${
+                    activeFilter === "Completed"
+                      ? "border-purple-500 ring-2 ring-purple-100"
+                      : "border-purple-100 hover:border-purple-300"
+                  }`}
+                >
 
-    <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center">
-      <TrendingUp
-        className="text-purple-500"
-        size={18}
-      />
-    </div>
+                  <div className="flex items-center gap-2.5">
 
-    <div>
-      <p className="text-xl font-bold text-gray-900">
-        {completionRate}%
-      </p>
+                    <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
 
-      <p className="text-xs text-gray-500">
-        Completion Rate
-      </p>
-    </div>
+                      <TrendingUp
+                        className="text-purple-500"
+                        size={17}
+                      />
 
-  </div>
-</button>
-</div>
-              {/* =================================
-                  PROGRESS
-              ================================= */}
+                    </div>
 
-              <div className="mt-6">
+                    <div>
+
+                      <p className="text-lg font-bold text-gray-900">
+                        {completionRate}%
+                      </p>
+
+                      <p className="text-xs text-gray-500">
+                        Completion Rate
+                      </p>
+
+                    </div>
+
+                  </div>
+
+                </button>
+
+              </div>
+
+              {/* PROGRESS */}
+
+              <div className="mt-5">
 
                 <div className="flex items-center justify-between mb-2">
 
-                  <p className="text-sm font-semibold text-gray-700">
+                  <p className="text-xs sm:text-sm font-semibold text-gray-700">
                     Task Progress
                   </p>
 
-                  <span className="text-xs font-medium bg-purple-100 text-purple-600 px-2.5 py-1 rounded-full">
+                  <span className="text-xs font-medium bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full">
                     {completedTasks}/{totalTasks}
                   </span>
 
                 </div>
 
-                <div className="h-2.5 bg-purple-100 rounded-full overflow-hidden">
+                <div className="h-2 bg-purple-100 rounded-full overflow-hidden">
 
                   <div
                     className="h-full bg-purple-600 rounded-full transition-all duration-500"
@@ -721,29 +761,28 @@ function Dashboard() {
               </div>
 
             </div>
-            
 
             {/* =================================
                 RECENT ACTIVITY
             ================================= */}
 
-            <div className="bg-white rounded-2xl border border-purple-100 p-5 shadow-sm">
+            <div className="bg-white rounded-2xl border border-purple-100 p-4 shadow-sm">
 
-              <div className="flex items-center gap-2 mb-5">
+              <div className="flex items-center gap-2 mb-4">
 
                 <Clock3
                   className="text-purple-600"
-                  size={20}
+                  size={19}
                 />
 
-                <h3 className="font-semibold text-lg">
+                <h3 className="font-semibold text-base">
                   Recent Activity
                 </h3>
 
               </div>
 
               {recentTasks.length === 0 ? (
-                <div className="py-8 text-center">
+                <div className="py-6 text-center">
 
                   <p className="text-sm text-gray-500">
                     No recent activity
@@ -751,7 +790,7 @@ function Dashboard() {
 
                 </div>
               ) : (
-                <div className="space-y-5">
+                <div className="space-y-4">
 
                   {recentTasks.map((task) => (
                     <div
@@ -761,11 +800,11 @@ function Dashboard() {
 
                       <div className="min-w-0">
 
-                        <p className="font-medium text-gray-800 truncate">
+                        <p className="text-sm font-medium text-gray-800 truncate">
                           {task.title}
                         </p>
 
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-xs text-gray-400 mt-0.5">
                           {formatActivityDate(
                             task.createdAt
                           )}
@@ -774,7 +813,7 @@ function Dashboard() {
                       </div>
 
                       <span
-                        className={`shrink-0 px-3 py-1 rounded-full text-xs font-medium ${
+                        className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium ${
                           task.status === "completed"
                             ? "bg-green-100 text-green-600"
                             : "bg-purple-100 text-purple-600"
@@ -806,37 +845,40 @@ function Dashboard() {
 
           <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl">
 
-            <div className="flex items-center justify-between p-6 border-b">
+            <div className="flex items-center justify-between p-5 border-b">
 
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">
+
+                <h2 className="text-xl font-bold text-gray-900">
                   Add New Task
                 </h2>
 
-                <p className="text-gray-500 text-sm mt-1">
+                <p className="text-gray-500 text-xs sm:text-sm mt-1">
                   Create a new task for your workflow
                 </p>
+
               </div>
 
               <button
                 type="button"
                 onClick={() => setShowModal(false)}
-                className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-gray-100"
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
               >
-                <X size={20} />
+                <X size={18} />
               </button>
 
             </div>
 
             <form
               onSubmit={handleCreateTask}
-              className="p-6 space-y-5"
+              className="p-5 space-y-4"
             >
 
               {/* TITLE */}
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
                   Task Title
                 </label>
 
@@ -846,14 +888,16 @@ function Dashboard() {
                   value={formData.title}
                   onChange={handleChange}
                   placeholder="e.g. Learn React"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
                 />
+
               </div>
 
               {/* DESCRIPTION */}
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
                   Description
                 </label>
 
@@ -863,14 +907,16 @@ function Dashboard() {
                   onChange={handleChange}
                   placeholder="Describe your task..."
                   rows="3"
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none resize-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none resize-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
                 />
+
               </div>
 
               {/* PRIORITY */}
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
                   Priority
                 </label>
 
@@ -878,8 +924,9 @@ function Dashboard() {
                   name="priority"
                   value={formData.priority}
                   onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
                 >
+
                   <option value="low">
                     Low
                   </option>
@@ -891,13 +938,16 @@ function Dashboard() {
                   <option value="high">
                     High
                   </option>
+
                 </select>
+
               </div>
 
               {/* DUE DATE */}
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+
+                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
                   Due Date
                 </label>
 
@@ -906,18 +956,19 @@ function Dashboard() {
                   name="dueDate"
                   value={formData.dueDate}
                   onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-xl px-4 py-3 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
                 />
+
               </div>
 
               {/* BUTTONS */}
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-1">
 
                 <button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 border border-gray-200 text-gray-700 py-3 rounded-xl font-semibold hover:bg-gray-50"
+                  className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50"
                 >
                   Cancel
                 </button>
@@ -925,7 +976,7 @@ function Dashboard() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-3 rounded-xl font-semibold"
+                  className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold"
                 >
                   {saving
                     ? "Creating..."

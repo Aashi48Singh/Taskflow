@@ -28,7 +28,7 @@ function TaskCard({
           onClick={() =>
             onComplete(task._id)
           }
-          className="mt-1"
+          className="mt-0.5 shrink-0"
           title={
             task.status === "completed"
               ? "Mark as pending"
@@ -40,14 +40,14 @@ function TaskCard({
 
             <CheckCircle2
               className="text-green-500"
-              size={25}
+              size={22}
             />
 
           ) : (
 
             <Circle
               className="text-gray-300 hover:text-purple-500"
-              size={25}
+              size={22}
             />
 
           )}
@@ -56,12 +56,12 @@ function TaskCard({
 
         {/* CONTENT */}
 
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
 
           <div className="flex items-center gap-3 flex-wrap">
 
             <h3
-              className={`text-xl font-semibold ${
+              className={`text-base sm:text-lg font-semibold leading-tight ${
                 task.status === "completed"
                   ? "line-through text-gray-400"
                   : "text-gray-800"
@@ -71,7 +71,7 @@ function TaskCard({
             </h3>
 
             <span
-              className={`px-3 py-1 rounded-full text-xs font-medium ${
+              className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
                 priorityClasses[
                   task.priority
                 ] ||
@@ -84,18 +84,18 @@ function TaskCard({
           </div>
 
           {task.description && (
-            <p className="text-gray-500 mt-2">
+            <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">
               {task.description}
             </p>
           )}
 
-          <div className="flex items-center gap-5 mt-5 text-sm text-gray-400 flex-wrap">
+          <div className="flex items-center gap-4 mt-3 text-sm text-gray-400 flex-wrap">
 
             {task.dueDate && (
 
               <div className="flex items-center gap-2">
 
-                <CalendarDays size={16} />
+                <CalendarDays size={15} />
 
                 <span>
                   Due{" "}
@@ -110,9 +110,9 @@ function TaskCard({
 
             {task.createdAt && (
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
 
-                <Clock3 size={16} />
+                <Clock3 size={15} />
 
                 <span>
                   Created{" "}
@@ -138,7 +138,7 @@ function TaskCard({
           className="text-gray-400 hover:text-red-500 transition"
           title="Delete task"
         >
-          <MoreVertical size={22} />
+          <MoreVertical size={19} />
         </button>
 
       </div>
@@ -147,4 +147,4 @@ function TaskCard({
   );
 }
 
-export default TaskCard;
+export default TaskCard

@@ -202,26 +202,26 @@ function Sidebar({ activePage }) {
   // =========================
 
   return (
-    <aside className="hidden md:flex w-80 bg-white border-r border-gray-200 min-h-[calc(100vh-80px)] flex-col">
+    <aside className="hidden md:flex w-64 lg:w-72 bg-white border-r border-gray-200 min-h-[calc(100vh-64px)] flex-col shrink-0">
 
       {/* ========================= */}
       {/* USER SECTION */}
       {/* ========================= */}
 
-      <div className="p-6 border-b border-gray-100">
-        <div className="flex items-center gap-4">
+      <div className="p-4 lg:p-5 border-b border-gray-100">
+        <div className="flex items-center gap-3">
 
-          <div className="w-14 h-14 rounded-full bg-purple-600 text-white flex items-center justify-center text-xl font-bold">
+          <div className="w-11 h-11 rounded-full bg-purple-600 text-white flex items-center justify-center text-lg font-bold shrink-0">
             {firstLetter}
           </div>
 
           <div className="min-w-0">
 
-            <h2 className="font-bold text-xl text-gray-800 truncate">
+            <h2 className="font-bold text-base lg:text-lg text-gray-800 truncate">
               Hey, {userName}
             </h2>
 
-            <p className="text-purple-500 text-sm mt-1">
+            <p className="text-purple-500 text-xs lg:text-sm mt-0.5">
               ✨ Let's crush some tasks!
             </p>
 
@@ -234,23 +234,23 @@ function Sidebar({ activePage }) {
       {/* PRODUCTIVITY */}
       {/* ========================= */}
 
-      <div className="p-6">
+      <div className="p-4 lg:p-5">
 
-        <div className="border border-purple-100 bg-purple-50 rounded-2xl p-4">
+        <div className="border border-purple-100 bg-purple-50 rounded-xl p-3.5">
 
-          <div className="flex justify-between items-center mb-3">
+          <div className="flex justify-between items-center mb-2.5">
 
-            <span className="text-sm font-semibold text-purple-600">
+            <span className="text-xs font-semibold text-purple-600">
               PRODUCTIVITY
             </span>
 
-            <span className="bg-purple-100 text-purple-600 px-3 py-1 rounded-full text-sm font-medium">
+            <span className="bg-purple-100 text-purple-600 px-2.5 py-0.5 rounded-full text-xs font-medium">
               {productivity}%
             </span>
 
           </div>
 
-          <div className="h-2 bg-purple-100 rounded-full overflow-hidden">
+          <div className="h-1.5 bg-purple-100 rounded-full overflow-hidden">
 
             <div
               className="h-full bg-purple-600 rounded-full transition-all duration-500"
@@ -269,7 +269,7 @@ function Sidebar({ activePage }) {
       {/* NAVIGATION */}
       {/* ========================= */}
 
-      <nav className="px-5 space-y-2">
+      <nav className="px-3 lg:px-4 space-y-1.5">
 
         {menuItems.map((item) => {
           const Icon = item.icon;
@@ -281,13 +281,13 @@ function Sidebar({ activePage }) {
             <a
               key={item.name}
               href={item.path}
-              className={`flex items-center gap-4 px-5 py-4 rounded-xl font-medium transition ${
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-lg text-sm font-medium transition ${
                 isActive
                   ? "bg-purple-50 text-purple-600 border-l-4 border-purple-600"
                   : "text-gray-600 hover:bg-gray-50"
               }`}
             >
-              <Icon size={22} />
+              <Icon size={19} />
 
               <span>{item.name}</span>
             </a>
@@ -300,44 +300,46 @@ function Sidebar({ activePage }) {
       {/* PRO TIP */}
       {/* ========================= */}
 
-      <div className="mt-auto p-5">
+      <div className="mt-auto p-4 lg:p-5">
 
-        <div className="bg-purple-50 border border-purple-100 rounded-2xl p-5">
+        <div className="bg-purple-50 border border-purple-100 rounded-xl p-4">
 
           {/* Header */}
 
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-2.5 mb-3">
 
-            <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+            <div className="w-9 h-9 rounded-lg bg-purple-100 flex items-center justify-center shrink-0">
 
               <Lightbulb
                 className="text-purple-600"
-                size={22}
+                size={19}
               />
 
             </div>
 
             <div>
-              <h3 className="font-semibold text-gray-800">
+
+              <h3 className="text-sm font-semibold text-gray-800">
                 Pro Tip
               </h3>
 
-              <p className="text-xs text-gray-400">
+              <p className="text-[11px] text-gray-400">
                 Productivity tip
               </p>
+
             </div>
 
           </div>
 
           {/* Tip */}
 
-          <div className="mb-4">
+          <div className="mb-3">
 
-            <h4 className="font-semibold text-gray-800 mb-1">
+            <h4 className="text-sm font-semibold text-gray-800 mb-1">
               {currentTip.title}
             </h4>
 
-            <p className="text-sm text-gray-500 leading-relaxed">
+            <p className="text-xs text-gray-500 leading-relaxed">
               {currentTip.text}
             </p>
 
@@ -348,17 +350,17 @@ function Sidebar({ activePage }) {
           <button
             type="button"
             onClick={handleNextTip}
-            className="w-full flex items-center justify-center gap-2 bg-white border border-purple-200 text-purple-600 hover:bg-purple-100 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all duration-200"
+            className="w-full flex items-center justify-center gap-2 bg-white border border-purple-200 text-purple-600 hover:bg-purple-100 py-2 px-3 rounded-lg text-xs font-semibold transition-all duration-200"
           >
             Next Tip
 
-            <ArrowRight size={16} />
+            <ArrowRight size={15} />
 
           </button>
 
           {/* Tip Counter */}
 
-          <p className="text-center text-xs text-gray-400 mt-3">
+          <p className="text-center text-[11px] text-gray-400 mt-2">
             {tipIndex + 1} of {tips.length}
           </p>
 

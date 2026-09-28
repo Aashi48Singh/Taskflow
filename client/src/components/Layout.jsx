@@ -7,11 +7,11 @@ function Layout({ children, activePage }) {
 
       <Navbar />
 
-      <div className="flex">
+      <div className="flex min-h-[calc(100vh-64px)]">
 
         <Sidebar activePage={activePage} />
 
-        <main className="flex-1 min-w-0">
+        <main className="flex-1 min-w-0 overflow-x-hidden">
           {children}
         </main>
 
