@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import API_URL from "../config.js";
 import {
   Settings,
   ChevronDown,
@@ -82,7 +82,7 @@ function Navbar() {
       }
 
       const response = await fetch(
-        "http://localhost:5000/api/notifications",
+        `${API_URL}/api/notifications`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -137,7 +137,7 @@ function Navbar() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `http://localhost:5000/api/notifications/${notificationId}/read`,
+        `${API_URL}/api/notifications/${notificationId}/read`,
         {
           method: "PATCH",
           headers: {
@@ -181,7 +181,7 @@ function Navbar() {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        "http://localhost:5000/api/notifications/read-all",
+        `${API_URL}/api/notifications/read-all`,
         {
           method: "PATCH",
           headers: {
@@ -227,7 +227,7 @@ function Navbar() {
         );
 
       const response = await fetch(
-        `http://localhost:5000/api/notifications/${notificationId}`,
+        `${API_URL}/api/notifications/${notificationId}`,
         {
           method: "DELETE",
           headers: {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-
+import API_URL from "../config.js";
 import {
   ArrowLeft,
   User,
@@ -98,7 +98,7 @@ function Profile() {
       setSaving(true);
 
       const response = await fetch(
-        "http://localhost:5000/api/auth/profile",
+        `${API_URL}/api/auth/profile`,
         {
           method: "PATCH",
 
@@ -211,7 +211,7 @@ function Profile() {
       setChangingPassword(true);
 
       const response = await fetch(
-        "http://localhost:5000/api/auth/change-password",
+        `${API_URL}/api/auth/change-password`,
         {
           method: "PATCH",
 

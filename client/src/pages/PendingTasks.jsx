@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import API_URL from "../config.js";
 import {
   ListTodo,
   Loader2,
@@ -22,7 +22,7 @@ function PendingTasks() {
   const fetchTasks = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5000/api/tasks",
+        `${API_URL}/api/tasks`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -75,7 +75,7 @@ function PendingTasks() {
   const handleComplete = async (taskId) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/tasks/${taskId}/toggle`,
+        `${API_URL}/api/tasks/${taskId}/toggle`,
         {
           method: "PATCH",
           headers: {
@@ -129,7 +129,7 @@ function PendingTasks() {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/tasks/${taskId}`,
+        `${API_URL}/api/tasks/${taskId}`,
         {
           method: "DELETE",
           headers: {
