@@ -96,6 +96,7 @@ function Dashboard() {
       return;
     }
 
+
     try {
       setSaving(true);
 
@@ -153,7 +154,7 @@ function Dashboard() {
   const handleComplete = async (taskId) => {
     try {
       const response = await fetch(
-        `http://localhost:5000/api/tasks/${taskId}/toggle`,
+        `${API_URL}/api/tasks/${taskId}/toggle`,
         {
           method: "PATCH",
           headers: {
@@ -197,7 +198,7 @@ function Dashboard() {
 
     try {
       const response = await fetch(
-        `http://localhost:5000/api/tasks/${taskId}`,
+        `${API_URL}/api/tasks/${taskId}`,
         {
           method: "DELETE",
           headers: {
@@ -363,7 +364,7 @@ function Dashboard() {
             MAIN TWO COLUMN LAYOUT
         ================================= */}
 
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_400px] gap-5 lg:gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px]2xl:grid-cols-[minmax(0,1fr)_400px] gap-5 lg:gap-6">
 
           {/* =================================
               LEFT SIDE

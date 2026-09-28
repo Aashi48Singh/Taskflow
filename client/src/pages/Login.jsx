@@ -103,11 +103,10 @@ function Login() {
       {/* Decorative Background */}
 
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-
-        <div className="absolute -top-24 -left-24 w-64 h-64 sm:w-80 sm:h-80 bg-purple-300/30 rounded-full blur-3xl" />
-
-        <div className="absolute -bottom-24 -right-24 w-72 h-72 sm:w-96 sm:h-96 bg-indigo-300/30 rounded-full blur-3xl" />
-
+      {/* <div className="absolute -top-20 -left-20 w-64 h-48 sm:w-80 sm:h-80 bg-purple-300/30 rounded-full blur-3xl" /> */}
+         <div className="absolute -top-20 -left-20 w-48 h-48 sm:w-64 sm:h-64 lg:w-80 lg:h-80 bg-purple-300/30 rounded-full blur-3xl" />
+        {/* <div className="absolute -bottom-24 -right-24 w-72 h-72 sm:w-96 sm:h-96 bg-indigo-300/30 rounded-full blur-3xl" /> */}
+      <div className="absolute -bottom-20 -right-20 w-56 h-56 sm:w-72 sm:h-72 lg:w-96 lg:h-96 bg-indigo-300/30 rounded-full blur-3xl" />
       </div>
 
       {/* Main Container */}
@@ -267,7 +266,7 @@ function Login() {
           {/* RIGHT SIDE - LOGIN */}
           {/* ================================= */}
 
-          <div className="p-5 sm:p-8 lg:p-10 xl:p-12 flex flex-col justify-center">
+          <div className="p-4 sm:p-6 lg:p-8 xl:p-10 xl:p-12 flex flex-col justify-center">
 
             {/* Mobile Logo */}
 
@@ -308,8 +307,8 @@ function Login() {
                 YOUR WORKSPACE
               </p>
 
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                Welcome back 👋
+              <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+                Welcome back 
               </h2>
 
               <p className="text-sm text-gray-500 mt-2">
@@ -504,7 +503,7 @@ function Login() {
             {/* Footer */}
 
             <p className="text-center text-[11px] text-gray-400 mt-6">
-              Organize better. Work smarter. 🚀
+              Organize better. Work smarter. 
             </p>
 
           </div>

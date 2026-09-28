@@ -326,8 +326,8 @@ function Profile() {
   return (
     <Layout activePage="">
 
-      <div className="p-4 sm:p-5 lg:p-6 xl:p-7">
-
+      {/* <div className="p-4 sm:p-5 lg:p-6 xl:p-7"> */}
+<div className="w-full">
         {/* =====================================
             BACK
         ===================================== */}
@@ -351,7 +351,8 @@ function Profile() {
 
           {/* Avatar */}
 
-          <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-2xl font-bold shadow-lg shadow-purple-200 shrink-0">
+          {/* <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-2xl font-bold shadow-lg shadow-purple-200 shrink-0"> */}
+           <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-[72px] lg:h-[72px] rounded-2xl bg-gradient-to-br from-purple-500 to-purple-700 text-white flex items-center justify-center text-2xl font-bold shadow-lg shadow-purple-200 shrink-0">
             {firstLetter}
           </div>
 
@@ -359,7 +360,8 @@ function Profile() {
 
           <div>
 
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            {/* <h1 className="text-2xl sm:text-3xl font-bold text-gray-900"> */}
+             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
               Account Settings
             </h1>
 
@@ -422,8 +424,17 @@ function Profile() {
             MAIN GRID
         ===================================== */}
 
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-5 items-start">
-
+        {/* <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-5 items-start"> */}
+    <div
+  className="
+    grid
+    grid-cols-1
+    lg:grid-cols-2
+    gap-4
+    lg:gap-5
+    items-start
+  "
+>
           {/* ===================================
               PERSONAL INFORMATION
           =================================== */}

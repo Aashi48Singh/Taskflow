@@ -68,8 +68,8 @@ function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-7 sm:py-10">
-
+    // <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 py-7 sm:py-10">
+       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-3 py-6 sm:px-4 sm:py-10">
       <div className="w-full max-w-sm sm:max-w-md">
 
         {/* =========================
@@ -100,15 +100,16 @@ function Register() {
             CARD
         ========================= */}
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-7">
-
+        {/* <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 sm:p-7"> */}
+           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 md:p-7">
           {/* =========================
               HEADING
           ========================= */}
 
           <div className="text-center mb-6">
 
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+            {/* <h2 className="text-2xl sm:text-3xl font-bold text-gray-900"> */}
+             <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
               Create Account
             </h2>
 

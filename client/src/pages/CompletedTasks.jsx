@@ -170,8 +170,8 @@ function CompletedTasks() {
   return (
     <Layout activePage="Completed Tasks">
 
-      <div className="p-4 sm:p-5 lg:p-6 xl:p-7">
-
+      {/* <div className="p-4 sm:p-5 lg:p-6 xl:p-7"> */}
+<div className="w-full">
         {/* =========================
             HEADER
         ========================= */}
@@ -191,7 +191,8 @@ function CompletedTasks() {
 
             <div>
 
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+              {/* <h1 className="text-2xl sm:text-3xl font-bold text-gray-900"> */}
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
                 Completed Tasks
               </h1>
 
@@ -211,8 +212,8 @@ function CompletedTasks() {
 
         {loading ? (
 
-          <div className="bg-white rounded-2xl border p-8 sm:p-10 text-center">
-
+          // <div className="bg-white rounded-2xl border p-8 sm:p-10 text-center">
+<div className="w-full bg-white rounded-2xl border p-6 sm:p-8 lg:p-10 text-center">
             <Loader2
               className="animate-spin text-purple-600 mx-auto"
               size={28}

@@ -381,8 +381,8 @@ function Navbar() {
             {/* ========================= */}
 
             {notificationOpen && (
-              <div className="absolute right-0 top-11 w-[340px] max-w-[calc(100vw-24px)] bg-white rounded-xl shadow-xl shadow-gray-200/60 border border-gray-100 overflow-hidden">
-
+              // <div className="absolute right-0 top-11 w-[340px] max-w-[calc(100vw-24px)] bg-white rounded-xl shadow-xl shadow-gray-200/60 border border-gray-100 overflow-hidden">
+                 <div className="absolute right-0 top-11 w-[340px] max-w-[calc(100vw-16px)] sm:max-w-[340px] bg-white rounded-xl shadow-xl shadow-gray-200/60 border border-gray-100 overflow-hidden">
                 {/* Header */}
 
                 <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
@@ -611,8 +611,8 @@ function Navbar() {
             {/* USER DROPDOWN */}
             {/* ========================= */}
 
-            <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 absolute right-0 top-[48px] w-60 bg-white rounded-xl shadow-xl shadow-gray-200/60 border border-gray-100 p-1.5 transition-all duration-200">
-
+            {/* <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 absolute right-0 top-[48px] w-60 bg-white rounded-xl shadow-xl shadow-gray-200/60 border border-gray-100 p-1.5 transition-all duration-200"> */}
+               <div className="invisible opacity-0 group-hover:visible group-hover:opacity-100 absolute right-0 top-[48px] w-[calc(100vw-24px)] max-w-60 bg-white rounded-xl shadow-xl shadow-gray-200/60 border border-gray-100 p-1.5 transition-all duration-200">
               <div className="px-3.5 py-2.5 border-b border-gray-100 mb-1">
 
                 <p className="text-sm font-semibold text-gray-800">
