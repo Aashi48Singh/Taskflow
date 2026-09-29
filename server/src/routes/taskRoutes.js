@@ -1,13 +1,13 @@
 import express from "express";
-
 import Task from "../models/Task.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import createNotification from "../utils/createNotification.js";
+
 const router = express.Router();
 
-/* =====================================================
-   CREATE TASK
-===================================================== */
+// ========================================
+// CREATE TASK
+// ========================================
 
 router.post("/", authMiddleware, async (req, res) => {
   try {
@@ -29,11 +29,9 @@ router.post("/", authMiddleware, async (req, res) => {
       description: description || "",
       priority: priority || "low",
       dueDate: dueDate || null,
-      status: "pending",
       user: req.userId,
     });
 
-    // Create notification
     await createNotification({
       user: req.userId,
       task: task._id,
@@ -56,9 +54,9 @@ router.post("/", authMiddleware, async (req, res) => {
   }
 });
 
-/* =====================================================
-   GET ALL TASKS
-===================================================== */
+// ========================================
+// GET USER TASKS
+// ========================================
 
 router.get("/", authMiddleware, async (req, res) => {
   try {
@@ -72,7 +70,7 @@ router.get("/", authMiddleware, async (req, res) => {
       tasks,
     });
   } catch (error) {
-    console.error("Get tasks error:", error);
+    console.error("Fetch tasks error:", error);
 
     res.status(500).json({
       message: "Failed to fetch tasks",
@@ -81,9 +79,59 @@ router.get("/", authMiddleware, async (req, res) => {
   }
 });
 
-/* =====================================================
-   TOGGLE TASK STATUS
-===================================================== */
+// ========================================
+// MOVE TASK TO IN PROGRESS
+// ========================================
+
+router.patch(
+  "/:id/start",
+  authMiddleware,
+  async (req, res) => {
+    try {
+      const task = await Task.findOne({
+        _id: req.params.id,
+        user: req.userId,
+      });
+
+      if (!task) {
+        return res.status(404).json({
+          message: "Task not found",
+        });
+      }
+
+      task.status = "in-progress";
+
+      await task.save();
+
+      await createNotification({
+        user: req.userId,
+        task: task._id,
+        type: "task_created",
+        title: "Task started",
+        message: `"${task.title}" is now in progress.`,
+      });
+
+      res.json({
+        message: "Task moved to in progress",
+        task,
+      });
+    } catch (error) {
+      console.error(
+        "Start task error:",
+        error
+      );
+
+      res.status(500).json({
+        message: "Failed to start task",
+        error: error.message,
+      });
+    }
+  }
+);
+
+// ========================================
+// TOGGLE TASK STATUS
+// ========================================
 
 router.patch(
   "/:id/toggle",
@@ -101,29 +149,42 @@ router.patch(
         });
       }
 
-      task.status =
-        task.status === "completed"
-          ? "pending"
-          : "completed";
-          // Create notification only when task is completed
-    if (task.status === "completed") {
-      await createNotification({
-        user: req.userId,
-        task: task._id,
-        type: "task_completed",
-        title: "Task completed 🎉",
-        message: `"${task.title}" has been completed.`,
-      });
-    }
+      /*
+        Pending → Completed
+        In Progress → Completed
+        Completed → Pending
+      */
+
+      if (
+        task.status === "pending" ||
+        task.status === "in-progress"
+      ) {
+        task.status = "completed";
+      } else {
+        task.status = "pending";
+      }
 
       await task.save();
+
+      if (task.status === "completed") {
+        await createNotification({
+          user: req.userId,
+          task: task._id,
+          type: "task_completed",
+          title: "Task completed 🎉",
+          message: `"${task.title}" has been completed.`,
+        });
+      }
 
       res.json({
         message: "Task status updated",
         task,
       });
     } catch (error) {
-      console.error("Toggle task error:", error);
+      console.error(
+        "Toggle task error:",
+        error
+      );
 
       res.status(500).json({
         message: "Failed to update task",
@@ -133,19 +194,20 @@ router.patch(
   }
 );
 
-/* =====================================================
-   DELETE TASK
-===================================================== */
+// ========================================
+// DELETE TASK
+// ========================================
 
 router.delete(
   "/:id",
   authMiddleware,
   async (req, res) => {
     try {
-      const task = await Task.findOneAndDelete({
-        _id: req.params.id,
-        user: req.userId,
-      });
+      const task =
+        await Task.findOneAndDelete({
+          _id: req.params.id,
+          user: req.userId,
+        });
 
       if (!task) {
         return res.status(404).json({
@@ -157,7 +219,10 @@ router.delete(
         message: "Task deleted successfully",
       });
     } catch (error) {
-      console.error("Delete task error:", error);
+      console.error(
+        "Delete task error:",
+        error
+      );
 
       res.status(500).json({
         message: "Failed to delete task",

@@ -10,15 +10,15 @@ import {
   CalendarDays,
   Trash2,
   PlayCircle,
+  Clock3,
 } from "lucide-react";
 
 import Layout from "../components/Layout.jsx";
 
-function PendingTasks() {
+function InProgressTasks() {
   const [tasks, setTasks] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
-  const [startingTaskId, setStartingTaskId] = useState(null);
 
   const token = localStorage.getItem("token");
 
@@ -46,16 +46,17 @@ function PendingTasks() {
         return;
       }
 
-      const pendingTasks = (
+      // Only in-progress tasks
+      const inProgressTasks = (
         data.tasks || []
       ).filter(
-        (task) => task.status === "pending"
+        (task) => task.status === "in-progress"
       );
 
-      setTasks(pendingTasks);
+      setTasks(inProgressTasks);
     } catch (error) {
       console.error(
-        "Pending tasks error:",
+        "In-progress tasks error:",
         error
       );
 
@@ -75,15 +76,13 @@ function PendingTasks() {
   }, []);
 
   // =========================
-  // START TASK
+  // COMPLETE TASK
   // =========================
 
-  const handleStart = async (taskId) => {
+  const handleComplete = async (taskId) => {
     try {
-      setStartingTaskId(taskId);
-
       const response = await fetch(
-        `${API_URL}/api/tasks/${taskId}/start`,
+        `${API_URL}/api/tasks/${taskId}/toggle`,
         {
           method: "PATCH",
           headers: {
@@ -97,12 +96,11 @@ function PendingTasks() {
       if (!response.ok) {
         alert(
           data.message ||
-            "Failed to start task"
+            "Failed to update task"
         );
         return;
       }
 
-      // Remove task from pending list
       setTasks((currentTasks) =>
         currentTasks.filter(
           (task) => task._id !== taskId
@@ -114,13 +112,11 @@ function PendingTasks() {
       );
     } catch (error) {
       console.error(
-        "Start task error:",
+        "Complete task error:",
         error
       );
 
-      alert("Unable to start task");
-    } finally {
-      setStartingTaskId(null);
+      alert("Unable to update task");
     }
   };
 
@@ -238,7 +234,7 @@ function PendingTasks() {
   };
 
   return (
-    <Layout activePage="Pending Tasks">
+    <Layout activePage="In Progress">
 
       <div className="mx-auto w-full max-w-[1500px]">
 
@@ -268,7 +264,7 @@ function PendingTasks() {
                   event.target.value
                 )
               }
-              placeholder="Search pending tasks..."
+              placeholder="Search in-progress tasks..."
               className="
                 h-10
                 w-full
@@ -331,7 +327,7 @@ function PendingTasks() {
                 bg-purple-100
               "
             >
-              <ListTodo
+              <PlayCircle
                 size={21}
                 className="text-purple-600"
               />
@@ -349,7 +345,7 @@ function PendingTasks() {
                   sm:text-2xl
                 "
               >
-                Pending Tasks
+                In Progress
               </h1>
 
               <p
@@ -360,8 +356,7 @@ function PendingTasks() {
                   sm:text-sm
                 "
               >
-                Tasks that still need to be
-                completed.
+                Tasks that are currently being worked on.
               </p>
 
             </div>
@@ -372,15 +367,15 @@ function PendingTasks() {
             className="
               shrink-0
               rounded-full
-              bg-orange-50
+              bg-purple-50
               px-3
               py-1.5
               text-xs
               font-semibold
-              text-orange-600
+              text-purple-600
             "
           >
-            {tasks.length} pending
+            {tasks.length} in progress
           </div>
 
         </section>
@@ -419,7 +414,7 @@ function PendingTasks() {
                 text-gray-500
               "
             >
-              Loading pending tasks...
+              Loading in-progress tasks...
             </p>
 
           </section>
@@ -454,7 +449,7 @@ function PendingTasks() {
 
               <div className="flex items-center gap-2">
 
-                <ListTodo
+                <Clock3
                   size={19}
                   className="text-purple-600"
                 />
@@ -467,7 +462,7 @@ function PendingTasks() {
                     sm:text-lg
                   "
                 >
-                  My Pending Tasks
+                  My In-Progress Tasks
                 </h2>
 
               </div>
@@ -504,12 +499,12 @@ function PendingTasks() {
                     items-center
                     justify-center
                     rounded-full
-                    bg-green-50
+                    bg-purple-50
                   "
                 >
                   <CheckCircle2
                     size={21}
-                    className="text-green-500"
+                    className="text-purple-500"
                   />
                 </div>
 
@@ -523,7 +518,7 @@ function PendingTasks() {
                 >
                   {searchTerm
                     ? "No tasks found"
-                    : "No pending tasks"}
+                    : "No tasks in progress"}
                 </h3>
 
                 <p
@@ -535,7 +530,7 @@ function PendingTasks() {
                 >
                   {searchTerm
                     ? "Try a different search term."
-                    : "You're all caught up!"}
+                    : "Start a pending task to see it here."}
                 </p>
 
               </div>
@@ -564,48 +559,27 @@ function PendingTasks() {
                     "
                   >
 
-                    {/* COMPLETE BUTTON */}
+                    {/* COMPLETE */}
 
                     <button
                       type="button"
                       onClick={() =>
-                        handleStart(
+                        handleComplete(
                           task._id
                         )
                       }
-                      disabled={
-                        startingTaskId ===
-                        task._id
-                      }
-                      className="
-                        flex
-                        shrink-0
-                        items-center
-                        justify-center
-                        rounded-full
-                        text-gray-300
-                        transition
-                        hover:text-purple-500
-                        disabled:cursor-not-allowed
-                        disabled:opacity-50
-                      "
-                      title="Start task"
-                      aria-label="Start task"
+                      className="shrink-0"
+                      title="Mark as completed"
+                      aria-label="Mark task as completed"
                     >
-                      {startingTaskId ===
-                      task._id ? (
-                        <Loader2
-                          size={21}
-                          className="
-                            animate-spin
-                            text-purple-500
-                          "
-                        />
-                      ) : (
-                        <PlayCircle
-                          size={21}
-                        />
-                      )}
+                      <Circle
+                        size={21}
+                        className="
+                          text-purple-300
+                          transition
+                          group-hover:text-purple-500
+                        "
+                      />
                     </button>
 
                     {/* TASK DETAILS */}
@@ -639,7 +613,23 @@ function PendingTasks() {
                         </h3>
 
                         <span
+                          className="
+                            shrink-0
+                            rounded-full
+                            bg-purple-50
+                            px-2.5
+                            py-0.5
+                            text-[10px]
+                            font-medium
+                            text-purple-600
+                          "
+                        >
+                          In Progress
+                        </span>
+
+                        <span
                           className={`
+                            hidden
                             shrink-0
                             rounded-full
                             px-2.5
@@ -647,6 +637,7 @@ function PendingTasks() {
                             text-[10px]
                             font-medium
                             capitalize
+                            sm:inline-flex
                             ${getPriorityClass(
                               task.priority
                             )}
@@ -704,57 +695,6 @@ function PendingTasks() {
 
                     </div>
 
-                    {/* START BUTTON */}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleStart(
-                          task._id
-                        )
-                      }
-                      disabled={
-                        startingTaskId ===
-                        task._id
-                      }
-                      className="
-                        hidden
-                        shrink-0
-                        items-center
-                        gap-1.5
-                        rounded-lg
-                        bg-purple-50
-                        px-3
-                        py-1.5
-                        text-xs
-                        font-semibold
-                        text-purple-600
-                        transition
-                        hover:bg-purple-100
-                        disabled:cursor-not-allowed
-                        disabled:opacity-50
-                        sm:flex
-                      "
-                    >
-                      {startingTaskId ===
-                      task._id ? (
-                        <>
-                          <Loader2
-                            size={14}
-                            className="animate-spin"
-                          />
-                          Starting...
-                        </>
-                      ) : (
-                        <>
-                          <PlayCircle
-                            size={14}
-                          />
-                          Start
-                        </>
-                      )}
-                    </button>
-
                     {/* DELETE */}
 
                     <button
@@ -792,8 +732,9 @@ function PendingTasks() {
         )}
 
       </div>
+
     </Layout>
   );
 }
 
-export default PendingTasks;
+export default InProgressTasks;

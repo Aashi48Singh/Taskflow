@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import API_URL from "../config.js";
+
 import {
   Settings,
   ChevronDown,
@@ -27,6 +28,10 @@ function Navbar({ onMenuClick }) {
 
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  // Refs for outside-click detection
+  const notificationRef = useRef(null);
+  const userMenuRef = useRef(null);
 
   const userName = user?.name || "User";
   const userEmail = user?.email || "user@example.com";
@@ -104,13 +109,63 @@ function Navbar({ onMenuClick }) {
   useEffect(() => {
     fetchNotifications();
 
-
     const interval = setInterval(() => {
       fetchNotifications();
     }, 60 * 1000);
 
     return () => {
       clearInterval(interval);
+    };
+  }, []);
+
+  // =========================
+  // OUTSIDE CLICK + ESCAPE
+  // =========================
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setNotificationOpen(false);
+      }
+
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target)
+      ) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setNotificationOpen(false);
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener(
+      "mousedown",
+      handleOutsideClick
+    );
+
+    document.addEventListener(
+      "keydown",
+      handleEscape
+    );
+
+    return () => {
+      document.removeEventListener(
+        "mousedown",
+        handleOutsideClick
+      );
+
+      document.removeEventListener(
+        "keydown",
+        handleEscape
+      );
     };
   }, []);
 
@@ -364,17 +419,18 @@ function Navbar({ onMenuClick }) {
           {/* NOTIFICATIONS */}
           {/* ========================= */}
 
-          <div className="relative">
-         
-         
+          <div
+            ref={notificationRef}
+            className="relative"
+          >
             <button
               type="button"
               onClick={toggleNotifications}
               className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center text-gray-400 hover:text-purple-600 hover:bg-purple-50 active:bg-purple-100 transition"
               title="Notifications"
               aria-label="Notifications"
+              aria-expanded={notificationOpen}
             >
-         
               <Bell size={19} />
 
               {unreadCount > 0 && (
@@ -383,171 +439,164 @@ function Navbar({ onMenuClick }) {
                     ? "99+"
                     : unreadCount}
                 </span>
-           
-           
-           )}
+              )}
             </button>
 
-         
             {/* NOTIFICATION DROPDOWN */}
 
-
             {notificationOpen && (
-              <>
-                <button
-                  type="button"
-                  aria-label="Close notifications"
-                  onClick={() =>
-                    setNotificationOpen(false)
-                  }
-                  className="fixed inset-0 z-40 cursor-default bg-transparent md:hidden"
-                />
+              <div className="absolute right-0 top-11 z-50 w-[calc(100vw-16px)] sm:w-[340px] max-w-[340px] bg-white rounded-xl shadow-xl shadow-gray-200/60 border border-gray-100 overflow-hidden">
 
-                <div className="absolute right-0 top-11 z-50 w-[calc(100vw-16px)] sm:w-[340px] max-w-[340px] bg-white rounded-xl shadow-xl shadow-gray-200/60 border border-gray-100 overflow-hidden">
+                {/* HEADER */}
 
-                  {/* Header */}
+                <div className="px-3.5 sm:px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3">
 
-                  <div className="px-3.5 sm:px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-gray-800">
+                      Notifications
+                    </h3>
 
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-semibold text-gray-800">
-                        Notifications
-                      </h3>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      {unreadCount > 0
+                        ? `${unreadCount} unread notification${
+                            unreadCount > 1
+                              ? "s"
+                              : ""
+                          }`
+                        : "You're all caught up"}
+                    </p>
+                  </div>
 
-                      <p className="text-[11px] text-gray-400 mt-0.5">
-                        {unreadCount > 0
-                          ? `${unreadCount} unread notification${
-                              unreadCount > 1
-                                ? "s"
-                                : ""
-                            }`
-                          : "You're all caught up"}
-                      </p>
-                    </div>
-
+                  <div className="flex items-center gap-1">
                     {unreadCount > 0 && (
                       <button
                         type="button"
                         onClick={markAllAsRead}
-                        className="shrink-0 text-[11px] sm:text-xs font-medium text-purple-600 hover:text-purple-700"
+                        className="shrink-0 text-[11px] sm:text-xs font-medium text-purple-600 hover:text-purple-700 px-2 py-1 rounded-md hover:bg-purple-50 transition"
                       >
                         Mark all read
                       </button>
                     )}
-                  </div>
 
-                  {/* Notifications */}
-
-                  <div className="max-h-[60vh] sm:max-h-[360px] overflow-y-auto">
-
-                    {notifications.length === 0 ? (
-                      <div className="px-5 py-8 text-center">
-                        <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center mx-auto">
-                          <Bell
-                            size={18}
-                            className="text-purple-500"
-                          />
-                        </div>
-
-                        <p className="text-sm font-medium text-gray-700 mt-3">
-                          No notifications
-                        </p>
-
-                        <p className="text-xs text-gray-400 mt-1">
-                          You're all caught up!
-                        </p>
-                      </div>
-                    ) : (
-                      notifications.map(
-                        (notification) => (
-                          <div
-                            key={notification._id}
-                            className={`px-3.5 py-3 border-b border-gray-50 hover:bg-gray-50 transition ${
-                              !notification.read
-                                ? "bg-purple-50/40"
-                                : ""
-                            }`}
-                          >
-                            <div className="flex gap-2.5">
-
-                              {/* Icon */}
-
-                              <div
-                                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${getNotificationIcon(
-                                  notification.type
-                                )}`}
-                              >
-                                {notification.type ===
-                                "task_completed" ? (
-                                  <Check size={16} />
-                                ) : (
-                                  <Bell size={15} />
-                                )}
-                              </div>
-
-                              {/* Content */}
-
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between gap-2">
-                                  <p className="text-xs font-semibold text-gray-800 break-words">
-                                    {
-                                      notification.title
-                                    }
-                                  </p>
-
-                                  {!notification.read && (
-                                    <span className="w-2 h-2 bg-purple-600 rounded-full mt-1 shrink-0" />
-                                  )}
-                                </div>
-
-                                <p className="text-xs text-gray-500 mt-1 leading-relaxed break-words">
-                                  {
-                                    notification.message
-                                  }
-                                </p>
-
-                                <div className="flex items-center gap-3 mt-2">
-                                  {!notification.read && (
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        markAsRead(
-                                          notification._id
-                                        )
-                                      }
-                                      className="text-[11px] text-purple-600 font-medium hover:text-purple-700"
-                                    >
-                                      Mark as read
-                                    </button>
-                                  )}
-
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      deleteNotification(
-                                        notification._id
-                                      )
-                                    }
-                                    className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition"
-                                    title="Delete notification"
-                                    aria-label="Delete notification"
-                                  >
-                                    <Trash2 size={13} />
-                                  </button>
-                                </div>
-                              </div>
-                            
-                            </div>
-                          
-                          </div>
-                        )
-                      )
-                    )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNotificationOpen(false)
+                      }
+                      className="w-7 h-7 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition"
+                      aria-label="Close notifications"
+                    >
+                      <X size={16} />
+                    </button>
                   </div>
                 </div>
-              </>
-           
-           )}
+
+                {/* NOTIFICATIONS LIST */}
+
+                <div className="max-h-[60vh] sm:max-h-[360px] overflow-y-auto">
+
+                  {notifications.length === 0 ? (
+                    <div className="px-5 py-8 text-center">
+                      <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center mx-auto">
+                        <Bell
+                          size={18}
+                          className="text-purple-500"
+                        />
+                      </div>
+
+                      <p className="text-sm font-medium text-gray-700 mt-3">
+                        No notifications
+                      </p>
+
+                      <p className="text-xs text-gray-400 mt-1">
+                        You're all caught up!
+                      </p>
+                    </div>
+                  ) : (
+                    notifications.map((notification) => (
+                      <div
+                        key={notification._id}
+                        className={`px-3.5 py-3 border-b border-gray-50 hover:bg-gray-50 transition ${
+                          !notification.read
+                            ? "bg-purple-50/40"
+                            : ""
+                        }`}
+                      >
+                        <div className="flex gap-2.5">
+
+                          {/* ICON */}
+
+                          <div
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${getNotificationIcon(
+                              notification.type
+                            )}`}
+                          >
+                            {notification.type ===
+                            "task_completed" ? (
+                              <Check size={16} />
+                            ) : (
+                              <Bell size={15} />
+                            )}
+                          </div>
+
+                          {/* CONTENT */}
+
+                          <div className="flex-1 min-w-0">
+
+                            <div className="flex items-start justify-between gap-2">
+
+                              <p className="text-xs font-semibold text-gray-800 break-words">
+                                {notification.title}
+                              </p>
+
+                              {!notification.read && (
+                                <span className="w-2 h-2 bg-purple-600 rounded-full mt-1 shrink-0" />
+                              )}
+                            </div>
+
+                            <p className="text-xs text-gray-500 mt-1 leading-relaxed break-words">
+                              {notification.message}
+                            </p>
+
+                            <div className="flex items-center gap-3 mt-2">
+
+                              {!notification.read && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    markAsRead(
+                                      notification._id
+                                    )
+                                  }
+                                  className="text-[11px] text-purple-600 font-medium hover:text-purple-700"
+                                >
+                                  Mark as read
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  deleteNotification(
+                                    notification._id
+                                  )
+                                }
+                                className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition"
+                                title="Delete notification"
+                                aria-label="Delete notification"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* ========================= */}
@@ -563,7 +612,7 @@ function Navbar({ onMenuClick }) {
             <Settings size={19} />
           </a>
 
-          {/* Divider */}
+          {/* DIVIDER */}
 
           <div className="hidden sm:block h-7 w-px bg-gray-200" />
 
@@ -571,16 +620,18 @@ function Navbar({ onMenuClick }) {
           {/* USER */}
           {/* ========================= */}
 
-          <div className="relative">
-
+          <div
+            ref={userMenuRef}
+            className="relative"
+          >
             <button
               type="button"
               onClick={toggleUserMenu}
               className="flex items-center gap-1.5 sm:gap-2.5 rounded-lg px-1 py-1 sm:px-1.5 hover:bg-gray-50 active:bg-gray-100 transition-all"
               aria-label="Open user menu"
+              aria-expanded={userMenuOpen}
             >
-
-              {/* Avatar */}
+              {/* AVATAR */}
 
               <div className="relative shrink-0">
                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 text-white flex items-center justify-center font-bold text-base shadow-sm">
@@ -588,23 +639,18 @@ function Navbar({ onMenuClick }) {
                 </div>
 
                 <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
-           
-           
               </div>
 
-              {/* User information */}
+              {/* USER INFORMATION */}
 
               <div className="hidden md:block text-left max-w-[160px]">
-               
                 <p className="text-sm font-semibold text-gray-800 truncate">
                   {userName}
                 </p>
 
                 <p className="text-[11px] text-gray-400 truncate">
                   {userEmail}
-             
                 </p>
-             
               </div>
 
               <ChevronDown
@@ -617,87 +663,71 @@ function Navbar({ onMenuClick }) {
               />
             </button>
 
-            {/* ========================= */}
             {/* USER DROPDOWN */}
-            {/* ========================= */}
 
             {userMenuOpen && (
-              <>
-                <button
-                  type="button"
-                  aria-label="Close user menu"
+              <div className="absolute right-0 top-[48px] z-50 w-[calc(100vw-24px)] max-w-60 bg-white rounded-xl shadow-xl shadow-gray-200/60 border border-gray-100 p-1.5">
+
+                <div className="px-3.5 py-2.5 border-b border-gray-100 mb-1">
+                  <p className="text-sm font-semibold text-gray-800 truncate">
+                    {userName}
+                  </p>
+
+                  <p className="text-[11px] text-gray-400 mt-0.5 truncate">
+                    {userEmail}
+                  </p>
+                </div>
+
+                {/* PROFILE */}
+
+                <a
+                  href="/profile"
                   onClick={() =>
                     setUserMenuOpen(false)
                   }
-                  className="fixed inset-0 z-40 cursor-default bg-transparent"
-                />
-
-                <div className="absolute right-0 top-[48px] z-50 w-[calc(100vw-24px)] max-w-60 bg-white rounded-xl shadow-xl shadow-gray-200/60 border border-gray-100 p-1.5">
-
-                  <div className="px-3.5 py-2.5 border-b border-gray-100 mb-1">
-                    <p className="text-sm font-semibold text-gray-800 truncate">
-                      {userName}
-                    </p>
-
-                    <p className="text-[11px] text-gray-400 mt-0.5 truncate">
-                      {userEmail}
-                    </p>
+                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-purple-50 hover:text-purple-600 active:bg-purple-50 transition"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
+                    <User size={16} />
                   </div>
 
-                  {/* Profile */}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium">
+                      Profile Settings
+                    </p>
 
-                  <a
-                    href="/profile"
-                    onClick={() =>
-                      setUserMenuOpen(false)
-                    }
-                    className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-purple-50 hover:text-purple-600 active:bg-purple-50 transition"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center shrink-0">
-                      <User size={16} />
-                    </div>
+                    <p className="text-[11px] text-gray-400">
+                      Manage your account
+                    </p>
+                  </div>
+                </a>
 
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium">
-                        Profile Settings
-                      </p>
+                {/* LOGOUT */}
 
-                      <p className="text-[11px] text-gray-400">
-                        Manage your account
-                      </p>
-                    </div>
-                  </a>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-red-500 hover:bg-red-50 active:bg-red-50 transition"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+                    <LogOut size={16} />
+                  </div>
 
-                  {/* Logout */}
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-medium">
+                      Logout
+                    </p>
 
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-red-500 hover:bg-red-50 active:bg-red-50 transition"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
-                      <LogOut size={16} />
-                    </div>
-
-                    <div className="text-left min-w-0">
-                      <p className="text-sm font-medium">
-                        Logout
-                      </p>
-
-                      <p className="text-[11px] text-red-300">
-                        Sign out of TaskFlow
-                      </p>
-                    </div>
-                  </button>
-                </div>
-              </>
+                    <p className="text-[11px] text-red-300">
+                      Sign out of TaskFlow
+                    </p>
+                  </div>
+                </button>
+              </div>
             )}
           </div>
-       
         </div>
-     
       </div>
-   
     </header>
   );
 }

@@ -3,6 +3,7 @@ import API_URL from "../config.js";
 import {
   LayoutDashboard,
   ListTodo,
+  PlayCircle,
   CheckCircle2,
   Lightbulb,
   ArrowRight,
@@ -144,6 +145,11 @@ function Sidebar({ activePage, onNavigate }) {
       name: "Pending Tasks",
       path: "/pending",
       icon: ListTodo,
+    },
+    {
+      name: "In Progress",
+      path: "/in-progress",
+      icon: PlayCircle,
     },
     {
       name: "Completed Tasks",
@@ -362,8 +368,6 @@ function Sidebar({ activePage, onNavigate }) {
 
         <div className="bg-purple-50 border border-purple-100 rounded-xl p-3.5 sm:p-4">
 
-          {/* Header */}
-
           <div className="flex items-center gap-2.5 mb-3">
 
             <div
@@ -384,7 +388,6 @@ function Sidebar({ activePage, onNavigate }) {
                 className="text-purple-600"
                 size={19}
               />
-           
             </div>
 
             <div className="min-w-0">
@@ -401,8 +404,6 @@ function Sidebar({ activePage, onNavigate }) {
 
           </div>
 
-          {/* Tip */}
-
           <div className="mb-3">
 
             <h4 className="text-sm font-semibold text-gray-800 mb-1">
@@ -414,8 +415,6 @@ function Sidebar({ activePage, onNavigate }) {
             </p>
 
           </div>
-
-          {/* Next Tip Button */}
 
           <button
             type="button"
@@ -448,8 +447,6 @@ function Sidebar({ activePage, onNavigate }) {
             />
 
           </button>
-
-          {/* Tip Counter */}
 
           <p className="text-center text-[11px] text-gray-400 mt-2">
             {tipIndex + 1} of {tips.length}

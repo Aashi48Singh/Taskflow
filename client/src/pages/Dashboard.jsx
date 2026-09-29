@@ -1,52 +1,68 @@
 import { useEffect, useMemo, useState } from "react";
-import API_URL from "../config.js";
 import {
-  Home,
-  Flame,
+  Search,
   Plus,
-  Filter,
-  X,
   CheckCircle2,
-  ListTodo,
   Clock3,
-  TrendingUp,
+  Circle,
+  Trash2,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  ListTodo,
+  Target,
 } from "lucide-react";
 
 import Layout from "../components/Layout.jsx";
 import StatsCard from "../components/StatsCard.jsx";
-import TaskCard from "../components/TaskCard.jsx";
+import API_URL from "../config.js";
 
 function Dashboard() {
   const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [activeFilter, setActiveFilter] = useState("All");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState("all");
 
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    priority: "low",
-    dueDate: "",
-  });
+  const [showModal, setShowModal] = useState(false);
+
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [priority, setPriority] = useState("low");
+  const [dueDate, setDueDate] = useState("");
+
+  const [loading, setLoading] = useState(false);
+
+  const [currentDate, setCurrentDate] = useState(
+    new Date()
+  );
 
   const token = localStorage.getItem("token");
 
-  // =========================
+  // ==========================================
+  // USER NAME
+  // ==========================================
+
+  const [userName] = useState(() => {
+    try {
+      const storedUser = JSON.parse(
+        localStorage.getItem("user") || "null"
+      );
+
+      return storedUser?.name || "User";
+    } catch {
+      return "User";
+    }
+  });
+
+  // ==========================================
   // FETCH TASKS
-  // =========================
+  // ==========================================
 
   const fetchTasks = async () => {
     try {
-      if (!token) {
-        window.location.href = "/login";
-        return;
-      }
-
       const response = await fetch(
         `${API_URL}/api/tasks`,
         {
-          method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -55,51 +71,42 @@ function Dashboard() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        alert(data.message || "Failed to load tasks");
-        return;
+      if (response.ok) {
+        setTasks(data.tasks || []);
+      } else {
+        console.error(
+          "Fetch tasks error:",
+          data.message
+        );
       }
-
-      setTasks(data.tasks || []);
     } catch (error) {
-      console.error("Fetch tasks error:", error);
-      alert("Unable to connect to server");
-    } finally {
-      setLoading(false);
+      console.error(
+        "Fetch tasks error:",
+        error
+      );
     }
   };
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (token) {
+      fetchTasks();
+    }
+  }, [token]);
 
-  // =========================
-  // FORM
-  // =========================
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-  };
-
-  // =========================
+  // ==========================================
   // CREATE TASK
-  // =========================
+  // ==========================================
 
-  const handleCreateTask = async (e) => {
-    e.preventDefault();
+  const handleCreateTask = async (event) => {
+    event.preventDefault();
 
-    if (!formData.title.trim()) {
-      alert("Please enter task title");
+    if (!title.trim()) {
       return;
     }
 
+    setLoading(true);
 
     try {
-      setSaving(true);
-
       const response = await fetch(
         `${API_URL}/api/tasks`,
         {
@@ -109,47 +116,48 @@ function Dashboard() {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            title: formData.title,
-            description: formData.description,
-            priority: formData.priority,
-            dueDate: formData.dueDate || null,
+            title: title.trim(),
+            description: description.trim(),
+            priority,
+            dueDate: dueDate || null,
           }),
         }
       );
 
       const data = await response.json();
 
-      if (!response.ok) {
-        alert(data.message || "Failed to create task");
-        return;
+      if (response.ok) {
+        setTasks((current) => [
+          data.task,
+          ...current,
+        ]);
+
+        setTitle("");
+        setDescription("");
+        setPriority("low");
+        setDueDate("");
+        setShowModal(false);
+      } else {
+        alert(
+          data.message ||
+            "Failed to create task"
+        );
       }
-
-      setTasks((previousTasks) => [
-        data.task,
-        ...previousTasks,
-      ]);
-
-      setFormData({
-        title: "",
-        description: "",
-        priority: "low",
-        dueDate: "",
-      });
-
-      setShowModal(false);
-
-      window.dispatchEvent(new Event("taskUpdated"));
     } catch (error) {
-      console.error("Create task error:", error);
-      alert("Unable to connect to server");
+      console.error(
+        "Create task error:",
+        error
+      );
+
+      alert("Something went wrong");
     } finally {
-      setSaving(false);
+      setLoading(false);
     }
   };
 
-  // =========================
-  // COMPLETE TASK
-  // =========================
+  // ==========================================
+  // COMPLETE / UNCOMPLETE TASK
+  // ==========================================
 
   const handleComplete = async (taskId) => {
     try {
@@ -165,27 +173,31 @@ function Dashboard() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        alert(data.message || "Failed to update task");
-        return;
+      if (response.ok) {
+        setTasks((current) =>
+          current.map((task) =>
+            task._id === taskId
+              ? data.task
+              : task
+          )
+        );
+      } else {
+        alert(
+          data.message ||
+            "Failed to update task"
+        );
       }
-
-      setTasks((previousTasks) =>
-        previousTasks.map((task) =>
-          task._id === taskId ? data.task : task
-        )
-      );
-
-      window.dispatchEvent(new Event("taskUpdated"));
     } catch (error) {
-      console.error("Complete task error:", error);
-      alert("Unable to update task");
+      console.error(
+        "Toggle task error:",
+        error
+      );
     }
   };
 
-  // =========================
+  // ==========================================
   // DELETE TASK
-  // =========================
+  // ==========================================
 
   const handleDelete = async (taskId) => {
     const confirmDelete = window.confirm(
@@ -209,27 +221,29 @@ function Dashboard() {
 
       const data = await response.json();
 
-      if (!response.ok) {
-        alert(data.message || "Failed to delete task");
-        return;
+      if (response.ok) {
+        setTasks((current) =>
+          current.filter(
+            (task) => task._id !== taskId
+          )
+        );
+      } else {
+        alert(
+          data.message ||
+            "Failed to delete task"
+        );
       }
-
-      setTasks((previousTasks) =>
-        previousTasks.filter(
-          (task) => task._id !== taskId
-        )
-      );
-
-      window.dispatchEvent(new Event("taskUpdated"));
     } catch (error) {
-      console.error("Delete task error:", error);
-      alert("Unable to delete task");
+      console.error(
+        "Delete task error:",
+        error
+      );
     }
   };
 
-  // =========================
-  // STATISTICS
-  // =========================
+  // ==========================================
+  // TASK STATISTICS
+  // ==========================================
 
   const totalTasks = tasks.length;
 
@@ -241,655 +255,1557 @@ function Dashboard() {
     (task) => task.status === "pending"
   ).length;
 
-  const lowPriority = tasks.filter(
-    (task) => task.priority === "low"
+  const inProgressTasks = tasks.filter(
+    (task) => task.status === "in-progress"
   ).length;
 
-  const mediumPriority = tasks.filter(
-    (task) => task.priority === "medium"
-  ).length;
-
-  const highPriority = tasks.filter(
-    (task) => task.priority === "high"
-  ).length;
-
-  const completionRate =
+  const completionPercentage =
     totalTasks === 0
       ? 0
-      : Math.round((completedTasks / totalTasks) * 100);
+      : Math.round(
+          (completedTasks / totalTasks) * 100
+        );
 
-  // =========================
-  // FILTER TASKS
-  // =========================
+  // ==========================================
+  // SEARCH + FILTER
+  // ==========================================
 
   const filteredTasks = useMemo(() => {
-    const now = new Date();
+    const search = searchTerm
+      .toLowerCase()
+      .trim();
 
     return tasks.filter((task) => {
-      if (activeFilter === "All") {
-        return true;
-      }
+      const matchesSearch =
+        !search ||
+        task.title
+          ?.toLowerCase()
+          .includes(search) ||
+        task.description
+          ?.toLowerCase()
+          .includes(search);
 
-      if (activeFilter === "Completed") {
-        return task.status === "completed";
-      }
+      const matchesFilter =
+        filter === "all" ||
+        (filter === "pending" &&
+          task.status === "pending") ||
+        (filter === "in-progress" &&
+          task.status === "in-progress") ||
+        (filter === "completed" &&
+          task.status === "completed");
 
-      if (activeFilter === "Pending") {
-        return task.status === "pending";
-      }
-
-      if (activeFilter === "High") {
-        return task.priority === "high";
-      }
-
-      if (activeFilter === "Medium") {
-        return task.priority === "medium";
-      }
-
-      if (activeFilter === "Low") {
-        return task.priority === "low";
-      }
-
-      if (activeFilter === "Today") {
-        if (!task.dueDate) {
-          return false;
-        }
-
-        const due = new Date(task.dueDate);
-
-        return (
-          due.getFullYear() === now.getFullYear() &&
-          due.getMonth() === now.getMonth() &&
-          due.getDate() === now.getDate()
-        );
-      }
-
-      if (activeFilter === "Week") {
-        if (!task.dueDate) {
-          return false;
-        }
-
-        const due = new Date(task.dueDate);
-
-        const startOfToday = new Date(now);
-        startOfToday.setHours(0, 0, 0, 0);
-
-        const sevenDaysLater = new Date(startOfToday);
-        sevenDaysLater.setDate(
-          sevenDaysLater.getDate() + 7
-        );
-
-        return (
-          due >= startOfToday &&
-          due <= sevenDaysLater
-        );
-      }
-
-      return true;
+      return (
+        matchesSearch &&
+        matchesFilter
+      );
     });
-  }, [tasks, activeFilter]);
+  }, [tasks, searchTerm, filter]);
 
-  // =========================
-  // RECENT ACTIVITY
-  // =========================
+  // ==========================================
+  // CALENDAR
+  // ==========================================
 
-  const recentTasks = [...tasks]
-    .sort(
-      (a, b) =>
-        new Date(b.createdAt) -
-        new Date(a.createdAt)
-    )
-    .slice(0, 4);
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
 
-  const formatActivityDate = (date) => {
+  const firstDay = new Date(
+    year,
+    month,
+    1
+  ).getDay();
+
+  const daysInMonth = new Date(
+    year,
+    month + 1,
+    0
+  ).getDate();
+
+  const calendarDays = [];
+
+  for (let i = 0; i < firstDay; i++) {
+    calendarDays.push(null);
+  }
+
+  for (
+    let day = 1;
+    day <= daysInMonth;
+    day++
+  ) {
+    calendarDays.push(day);
+  }
+
+  const monthName = currentDate.toLocaleString(
+    "default",
+    {
+      month: "long",
+    }
+  );
+
+  const previousMonth = () => {
+    setCurrentDate(
+      new Date(year, month - 1, 1)
+    );
+  };
+
+  const nextMonth = () => {
+    setCurrentDate(
+      new Date(year, month + 1, 1)
+    );
+  };
+
+  // ==========================================
+  // TODAY
+  // ==========================================
+
+  const today = new Date();
+
+  const isToday = (day) => {
+    if (!day) {
+      return false;
+    }
+
+    return (
+      day === today.getDate() &&
+      month === today.getMonth() &&
+      year === today.getFullYear()
+    );
+  };
+
+  // ==========================================
+  // TASK DATE
+  // ==========================================
+
+  const hasTaskOnDate = (day) => {
+    if (!day) {
+      return false;
+    }
+
+    return tasks.some((task) => {
+      if (!task.dueDate) {
+        return false;
+      }
+
+      const date = new Date(task.dueDate);
+
+      return (
+        date.getDate() === day &&
+        date.getMonth() === month &&
+        date.getFullYear() === year
+      );
+    });
+  };
+
+  // ==========================================
+  // FORMAT DUE DATE
+  // ==========================================
+
+  const formatDueDate = (date) => {
     if (!date) {
-      return "";
+      return "No due date";
     }
 
     return new Date(date).toLocaleDateString(
-      "en-US",
+      "en-IN",
       {
-        month: "numeric",
         day: "numeric",
+        month: "short",
         year: "numeric",
       }
     );
   };
 
+  // ==========================================
+  // PRIORITY STYLE
+  // ==========================================
+
+  const getPriorityClass = (taskPriority) => {
+    if (taskPriority === "high") {
+      return "bg-red-50 text-red-600";
+    }
+
+    if (taskPriority === "medium") {
+      return "bg-amber-50 text-amber-600";
+    }
+
+    return "bg-blue-50 text-blue-600";
+  };
+
+  // ==========================================
+  // RETURN
+  // ==========================================
+
   return (
     <Layout activePage="Dashboard">
-      <div className="p-4 sm:p-5 lg:p-6 xl:p-7">
+      <div className="mx-auto w-full max-w-[1500px]">
 
-        {/* =================================
-            MAIN TWO COLUMN LAYOUT
-        ================================= */}
+        {/* =====================================
+            SEARCH
+        ====================================== */}
 
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px]2xl:grid-cols-[minmax(0,1fr)_400px] gap-5 lg:gap-6">
+        <div className="mb-4">
+          <div className="relative w-full max-w-[470px]">
 
-          {/* =================================
-              LEFT SIDE
-          ================================= */}
+            <Search
+              size={17}
+              className="
+                absolute
+                left-3.5
+                top-1/2
+                -translate-y-1/2
+                text-gray-400
+              "
+            />
+
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(event) =>
+                setSearchTerm(
+                  event.target.value
+                )
+              }
+              placeholder="Search tasks..."
+              className="
+                h-10
+                w-full
+                rounded-full
+                border
+                border-gray-100
+                bg-white
+                pl-10
+                pr-4
+                text-sm
+                text-gray-700
+                shadow-sm
+                outline-none
+                transition
+                placeholder:text-gray-400
+                focus:border-purple-300
+                focus:ring-2
+                focus:ring-purple-100
+              "
+            />
+
+          </div>
+        </div>
+
+        {/* =====================================
+            MAIN GRID
+        ====================================== */}
+
+        <div
+          className="
+            grid
+            grid-cols-1
+            gap-4
+            xl:grid-cols-[minmax(0,1fr)_330px]
+          "
+        >
+
+          {/* ===================================
+              LEFT CONTENT
+          =================================== */}
 
           <div className="min-w-0">
 
-            {/* HEADER */}
+            {/* =================================
+                WELCOME
+            ================================== */}
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 lg:mb-6">
+            <section
+              className="
+                mb-4
+                overflow-hidden
+                rounded-2xl
+                border
+                border-purple-100
+                bg-gradient-to-r
+                from-purple-50
+                via-white
+                to-violet-50
+                px-5
+                py-4
+                shadow-sm
+              "
+            >
 
-              <div>
-                <div className="flex items-center gap-2.5">
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-between
+                  gap-4
+                "
+              >
 
-                  <Home
-                    className="text-purple-600"
-                    size={25}
-                  />
+                <div className="min-w-0">
 
-                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    Task Overview
-                  </h2>
+                  <div className="flex items-center gap-2">
+
+                    <span className="text-2xl">
+                      👋
+                    </span>
+
+                    <h1
+                      className="
+                        truncate
+                        text-2xl
+                        font-bold
+                        tracking-tight
+                        text-gray-900
+                      "
+                    >
+                      Hello, {userName}!
+                    </h1>
+
+                  </div>
+
+                  <p
+                    className="
+                      ml-9
+                      mt-1
+                      text-sm
+                      text-gray-500
+                    "
+                  >
+                    Stay organized, get things
+                    done.
+                  </p>
 
                 </div>
 
-                <p className="text-sm sm:text-base text-gray-500 mt-1.5 ml-9">
-                  Manage your tasks efficiently
-                </p>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowModal(true)
+                  }
+                  className="
+                    hidden
+                    shrink-0
+                    items-center
+                    gap-1.5
+                    rounded-lg
+                    bg-purple-600
+                    px-3.5
+                    py-2
+                    text-xs
+                    font-semibold
+                    text-white
+                    shadow-sm
+                    transition
+                    hover:bg-purple-700
+                    sm:flex
+                  "
+                >
+                  <Plus size={16} />
+                  Add Task
+                </button>
 
               </div>
 
-              <button
-                onClick={() => setShowModal(true)}
-                className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold shadow-sm transition"
-              >
-                <Plus size={18} />
-                Add New Task
-              </button>
-
-            </div>
+            </section>
 
             {/* =================================
-                PRIORITY STAT CARDS
-            ================================= */}
+                STATS
+            ================================== */}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+            <section
+              className="
+                mb-4
+                grid
+                grid-cols-2
+                gap-3
+                lg:grid-cols-4
+              "
+            >
 
               <StatsCard
                 title="Total Tasks"
                 value={totalTasks}
-                icon={Home}
-                onClick={() => setActiveFilter("All")}
-                active={activeFilter === "All"}
+                icon={ListTodo}
+                iconBg="bg-purple-100"
+                iconColor="text-purple-600"
               />
 
               <StatsCard
-                title="Low Priority"
-                value={lowPriority}
-                icon={Flame}
+                title="Completed"
+                value={completedTasks}
+                icon={CheckCircle2}
                 iconBg="bg-green-100"
                 iconColor="text-green-600"
-                onClick={() => setActiveFilter("Low")}
-                active={activeFilter === "Low"}
               />
 
               <StatsCard
-                title="Medium Priority"
-                value={mediumPriority}
-                icon={Flame}
+                title="In Progress"
+                value={inProgressTasks}
+                icon={Clock3}
                 iconBg="bg-orange-100"
                 iconColor="text-orange-600"
-                onClick={() => setActiveFilter("Medium")}
-                active={activeFilter === "Medium"}
               />
 
               <StatsCard
-                title="High Priority"
-                value={highPriority}
-                icon={Flame}
+                title="Pending"
+                value={pendingTasks}
+                icon={Target}
                 iconBg="bg-red-100"
-                iconColor="text-red-600"
-                onClick={() => setActiveFilter("High")}
-                active={activeFilter === "High"}
+                iconColor="text-red-500"
               />
 
-            </div>
+            </section>
 
             {/* =================================
-                FILTER BAR
-            ================================= */}
+                MY TASKS
+            ================================== */}
 
-            <div className="mt-4 bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+            <section
+              className="
+                overflow-hidden
+                rounded-2xl
+                border
+                border-gray-200
+                bg-white
+                shadow-sm
+              "
+            >
 
-              <div className="flex items-center gap-2.5 mb-4">
+              {/* TASK HEADER */}
 
-                <Filter
-                  className="text-purple-600"
-                  size={19}
-                />
+              <div
+                className="
+                  flex
+                  flex-col
+                  gap-3
+                  border-b
+                  border-gray-100
+                  px-4
+                  py-3
+                "
+              >
 
-                <h3 className="font-semibold text-base">
-                  All Tasks
-                </h3>
+                <div
+                  className="
+                    flex
+                    items-center
+                    justify-between
+                    gap-3
+                  "
+                >
 
-              </div>
+                  <div className="flex items-center gap-2">
 
-              <div className="flex gap-2 flex-wrap">
-
-                {[
-                  "All",
-                  "Today",
-                  "Week",
-                  "High",
-                  "Medium",
-                  "Low",
-                ].map((filter) => (
-                  <button
-                    key={filter}
-                    onClick={() =>
-                      setActiveFilter(filter)
-                    }
-                    className={`px-4 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition ${
-                      activeFilter === filter
-                        ? "bg-purple-100 text-purple-600 border border-purple-500"
-                        : "text-gray-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    {filter}
-                  </button>
-                ))}
-
-              </div>
-            </div>
-
-            {/* =================================
-                TASK LIST
-            ================================= */}
-
-            <div className="mt-4 space-y-3">
-
-              {loading ? (
-                <div className="bg-white rounded-2xl border p-8 text-center">
-                  <p className="text-sm text-gray-500">
-                    Loading tasks...
-                  </p>
-                </div>
-              ) : filteredTasks.length === 0 ? (
-                <div className="bg-white rounded-2xl border p-8 text-center">
-
-                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-
-                    <Plus
+                    <ListTodo
+                      size={19}
                       className="text-purple-600"
-                      size={22}
                     />
 
-                  </div>
-
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    No tasks found
-                  </h3>
-
-                  <p className="text-sm text-gray-500 mt-1.5">
-                    Try another filter or create a new task.
-                  </p>
-
-                </div>
-              ) : (
-                filteredTasks.map((task) => (
-                  <TaskCard
-                    key={task._id}
-                    task={task}
-                    onComplete={handleComplete}
-                    onDelete={handleDelete}
-                  />
-                ))
-              )}
-
-            </div>
-
-          </div>
-
-          {/* =================================
-              RIGHT SIDE
-          ================================= */}
-
-          <div className="space-y-4">
-
-            {/* =================================
-                TASK STATISTICS
-            ================================= */}
-
-            <div className="bg-white rounded-2xl border border-purple-100 p-4 shadow-sm">
-
-              <div className="flex items-center gap-2 mb-4">
-
-                <TrendingUp
-                  className="text-purple-600"
-                  size={19}
-                />
-
-                <h3 className="font-semibold text-base">
-                  Task Statistics
-                </h3>
-
-              </div>
-
-              <div className="grid grid-cols-2 gap-2.5">
-
-                {/* TOTAL */}
-
-                <button
-                  type="button"
-                  onClick={() => setActiveFilter("All")}
-                  className={`w-full text-left border rounded-xl p-3 transition ${
-                    activeFilter === "All"
-                      ? "border-purple-500 ring-2 ring-purple-100"
-                      : "border-purple-100 hover:border-purple-300"
-                  }`}
-                >
-
-                  <div className="flex items-center gap-2.5">
-
-                    <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
-
-                      <ListTodo
-                        className="text-purple-500"
-                        size={17}
-                      />
-
-                    </div>
-
-                    <div>
-
-                      <p className="text-lg font-bold text-gray-900">
-                        {totalTasks}
-                      </p>
-
-                      <p className="text-xs text-gray-500">
-                        Total Tasks
-                      </p>
-
-                    </div>
+                    <h2
+                      className="
+                        text-base
+                        font-bold
+                        text-gray-900
+                      "
+                    >
+                      My Tasks
+                    </h2>
 
                   </div>
 
-                </button>
-
-                {/* COMPLETED */}
-
-                <button
-                  type="button"
-                  onClick={() => setActiveFilter("Completed")}
-                  className={`w-full text-left border rounded-xl p-3 transition ${
-                    activeFilter === "Completed"
-                      ? "border-green-500 ring-2 ring-green-100"
-                      : "border-green-100 hover:border-green-300"
-                  }`}
-                >
-
-                  <div className="flex items-center gap-2.5">
-
-                    <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
-
-                      <CheckCircle2
-                        className="text-green-500"
-                        size={17}
-                      />
-
-                    </div>
-
-                    <div>
-
-                      <p className="text-lg font-bold text-gray-900">
-                        {completedTasks}
-                      </p>
-
-                      <p className="text-xs text-gray-500">
-                        Completed
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                </button>
-
-                {/* PENDING */}
-
-                <button
-                  type="button"
-                  onClick={() => setActiveFilter("Pending")}
-                  className={`w-full text-left border rounded-xl p-3 transition ${
-                    activeFilter === "Pending"
-                      ? "border-purple-500 ring-2 ring-purple-100"
-                      : "border-purple-100 hover:border-purple-300"
-                  }`}
-                >
-
-                  <div className="flex items-center gap-2.5">
-
-                    <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
-
-                      <Clock3
-                        className="text-purple-500"
-                        size={17}
-                      />
-
-                    </div>
-
-                    <div>
-
-                      <p className="text-lg font-bold text-gray-900">
-                        {pendingTasks}
-                      </p>
-
-                      <p className="text-xs text-gray-500">
-                        Pending
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                </button>
-
-                {/* COMPLETION RATE */}
-
-                <button
-                  type="button"
-                  onClick={() => setActiveFilter("Completed")}
-                  className={`w-full text-left border rounded-xl p-3 transition ${
-                    activeFilter === "Completed"
-                      ? "border-purple-500 ring-2 ring-purple-100"
-                      : "border-purple-100 hover:border-purple-300"
-                  }`}
-                >
-
-                  <div className="flex items-center gap-2.5">
-
-                    <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
-
-                      <TrendingUp
-                        className="text-purple-500"
-                        size={17}
-                      />
-
-                    </div>
-
-                    <div>
-
-                      <p className="text-lg font-bold text-gray-900">
-                        {completionRate}%
-                      </p>
-
-                      <p className="text-xs text-gray-500">
-                        Completion Rate
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                </button>
-
-              </div>
-
-              {/* PROGRESS */}
-
-              <div className="mt-5">
-
-                <div className="flex items-center justify-between mb-2">
-
-                  <p className="text-xs sm:text-sm font-semibold text-gray-700">
-                    Task Progress
-                  </p>
-
-                  <span className="text-xs font-medium bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full">
-                    {completedTasks}/{totalTasks}
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowModal(true)
+                    }
+                    className="
+                      flex
+                      items-center
+                      gap-1.5
+                      rounded-lg
+                      bg-purple-600
+                      px-3
+                      py-2
+                      text-xs
+                      font-semibold
+                      text-white
+                      transition
+                      hover:bg-purple-700
+                      sm:hidden
+                    "
+                  >
+                    <Plus size={15} />
+                    Add Task
+                  </button>
 
                 </div>
 
-                <div className="h-2 bg-purple-100 rounded-full overflow-hidden">
+                {/* FILTERS */}
 
+                <div
+                  className="
+                    flex
+                    w-full
+                    overflow-x-auto
+                    rounded-lg
+                    bg-gray-50
+                    p-1
+                  "
+                >
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFilter("all")
+                    }
+                    className={`
+                      flex-1
+                      whitespace-nowrap
+                      rounded-md
+                      px-3
+                      py-1.5
+                      text-xs
+                      font-medium
+                      transition
+                      ${
+                        filter === "all"
+                          ? "bg-purple-600 text-white shadow-sm"
+                          : "text-gray-500 hover:text-gray-800"
+                      }
+                    `}
+                  >
+                    All
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFilter("pending")
+                    }
+                    className={`
+                      flex-1
+                      whitespace-nowrap
+                      rounded-md
+                      px-3
+                      py-1.5
+                      text-xs
+                      font-medium
+                      transition
+                      ${
+                        filter === "pending"
+                          ? "bg-purple-600 text-white shadow-sm"
+                          : "text-gray-500 hover:text-gray-800"
+                      }
+                    `}
+                  >
+                    Pending
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFilter("in-progress")
+                    }
+                    className={`
+                      flex-1
+                      whitespace-nowrap
+                      rounded-md
+                      px-3
+                      py-1.5
+                      text-xs
+                      font-medium
+                      transition
+                      ${
+                        filter === "in-progress"
+                          ? "bg-purple-600 text-white shadow-sm"
+                          : "text-gray-500 hover:text-gray-800"
+                      }
+                    `}
+                  >
+                    In Progress
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setFilter("completed")
+                    }
+                    className={`
+                      flex-1
+                      whitespace-nowrap
+                      rounded-md
+                      px-3
+                      py-1.5
+                      text-xs
+                      font-medium
+                      transition
+                      ${
+                        filter === "completed"
+                          ? "bg-purple-600 text-white shadow-sm"
+                          : "text-gray-500 hover:text-gray-800"
+                      }
+                    `}
+                  >
+                    Completed
+                  </button>
+
+                </div>
+
+              </div>
+
+              {/* TASK LIST */}
+
+              <div className="divide-y divide-gray-100">
+
+                {filteredTasks.length === 0 ? (
                   <div
-                    className="h-full bg-purple-600 rounded-full transition-all duration-500"
-                    style={{
-                      width: `${completionRate}%`,
-                    }}
-                  />
+                    className="
+                      px-5
+                      py-12
+                      text-center
+                    "
+                  >
 
-                </div>
+                    <div
+                      className="
+                        mx-auto
+                        flex
+                        h-10
+                        w-10
+                        items-center
+                        justify-center
+                        rounded-full
+                        bg-purple-50
+                      "
+                    >
+                      <ListTodo
+                        size={20}
+                        className="text-purple-500"
+                      />
+                    </div>
 
-              </div>
+                    <h3
+                      className="
+                        mt-3
+                        text-sm
+                        font-semibold
+                        text-gray-700
+                      "
+                    >
+                      No tasks found
+                    </h3>
 
-            </div>
+                    <p
+                      className="
+                        mt-1
+                        text-xs
+                        text-gray-400
+                      "
+                    >
+                      {searchTerm
+                        ? "Try a different search term."
+                        : "Create your first task to get started."}
+                    </p>
 
-            {/* =================================
-                RECENT ACTIVITY
-            ================================= */}
-
-            <div className="bg-white rounded-2xl border border-purple-100 p-4 shadow-sm">
-
-              <div className="flex items-center gap-2 mb-4">
-
-                <Clock3
-                  className="text-purple-600"
-                  size={19}
-                />
-
-                <h3 className="font-semibold text-base">
-                  Recent Activity
-                </h3>
-
-              </div>
-
-              {recentTasks.length === 0 ? (
-                <div className="py-6 text-center">
-
-                  <p className="text-sm text-gray-500">
-                    No recent activity
-                  </p>
-
-                </div>
-              ) : (
-                <div className="space-y-4">
-
-                  {recentTasks.map((task) => (
+                  </div>
+                ) : (
+                  filteredTasks.map((task) => (
                     <div
                       key={task._id}
-                      className="flex items-center justify-between gap-3"
+                      className="
+                        group
+                        flex
+                        min-h-[66px]
+                        items-center
+                        gap-3
+                        px-4
+                        py-2.5
+                        transition
+                        hover:bg-gray-50
+                        sm:px-5
+                      "
                     >
 
-                      <div className="min-w-0">
+                      {/* CHECKBOX */}
 
-                        <p className="text-sm font-medium text-gray-800 truncate">
-                          {task.title}
-                        </p>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleComplete(
+                            task._id
+                          )
+                        }
+                        className="shrink-0"
+                        title={
+                          task.status ===
+                          "completed"
+                            ? "Mark as pending"
+                            : "Mark as completed"
+                        }
+                      >
 
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          {formatActivityDate(
-                            task.createdAt
+                        {task.status ===
+                        "completed" ? (
+                          <CheckCircle2
+                            size={21}
+                            className="text-green-500"
+                          />
+                        ) : (
+                          <Circle
+                            size={21}
+                            className="
+                              text-gray-300
+                              transition
+                              group-hover:text-purple-400
+                            "
+                          />
+                        )}
+
+                      </button>
+
+                      {/* TASK INFO */}
+
+                      <div className="min-w-0 flex-1">
+
+                        <div
+                          className="
+                            flex
+                            min-w-0
+                            items-center
+                            gap-2
+                          "
+                        >
+
+                          <h3
+                            className={`
+                              min-w-0
+                              truncate
+                              text-sm
+                              font-semibold
+                              ${
+                                task.status ===
+                                "completed"
+                                  ? "text-gray-400 line-through"
+                                  : "text-gray-800"
+                              }
+                            `}
+                          >
+                            {task.title}
+                          </h3>
+
+                          <span
+                            className={`
+                              shrink-0
+                              rounded-full
+                              px-2.5
+                              py-0.5
+                              text-[10px]
+                              font-medium
+                              capitalize
+                              ${getPriorityClass(
+                                task.priority
+                              )}
+                            `}
+                          >
+                            {task.priority}
+                          </span>
+
+                        </div>
+
+                        <div
+                          className="
+                            mt-1
+                            flex
+                            items-center
+                            gap-3
+                          "
+                        >
+
+                          {task.description && (
+                            <p
+                              className="
+                                hidden
+                                max-w-[400px]
+                                truncate
+                                text-xs
+                                text-gray-400
+                                sm:block
+                              "
+                            >
+                              {task.description}
+                            </p>
                           )}
-                        </p>
+
+                          <div
+                            className="
+                              flex
+                              shrink-0
+                              items-center
+                              gap-1
+                              text-[11px]
+                              text-gray-400
+                            "
+                          >
+
+                            <CalendarDays size={12} />
+
+                            <span>
+                              {formatDueDate(
+                                task.dueDate
+                              )}
+                            </span>
+
+                          </div>
+
+                        </div>
 
                       </div>
 
-                      <span
-                        className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-medium ${
-                          task.status === "completed"
-                            ? "bg-green-100 text-green-600"
-                            : "bg-purple-100 text-purple-600"
-                        }`}
+                      {/* STATUS */}
+
+                      {task.status ===
+                        "in-progress" && (
+                        <span
+                          className="
+                            hidden
+                            shrink-0
+                            rounded-full
+                            bg-orange-50
+                            px-2.5
+                            py-1
+                            text-[10px]
+                            font-medium
+                            text-orange-600
+                            sm:inline-flex
+                          "
+                        >
+                          In Progress
+                        </span>
+                      )}
+
+                      {/* DELETE */}
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDelete(
+                            task._id
+                          )
+                        }
+                        className="
+                          shrink-0
+                          rounded-md
+                          p-1.5
+                          text-gray-300
+                          transition
+                          hover:bg-red-50
+                          hover:text-red-500
+                        "
+                        title="Delete task"
+                        aria-label="Delete task"
                       >
-                        {task.status === "completed"
-                          ? "Done"
-                          : "Pending"}
+                        <Trash2 size={16} />
+                      </button>
+
+                    </div>
+                  ))
+                )}
+
+              </div>
+
+            </section>
+
+          </div>
+
+          {/* ===================================
+              RIGHT SIDE
+          =================================== */}
+
+          <aside className="space-y-4">
+
+            {/* =================================
+                CALENDAR
+            ================================== */}
+
+            <section
+              className="
+                rounded-2xl
+                border
+                border-gray-200
+                bg-white
+                p-4
+                shadow-sm
+              "
+            >
+
+              <div
+                className="
+                  mb-3
+                  flex
+                  items-center
+                  justify-between
+                "
+              >
+
+                <h2
+                  className="
+                    text-base
+                    font-bold
+                    text-gray-900
+                  "
+                >
+                  {monthName} {year}
+                </h2>
+
+                <div className="flex gap-1">
+
+                  <button
+                    type="button"
+                    onClick={previousMonth}
+                    className="
+                      rounded-md
+                      p-1
+                      text-gray-400
+                      transition
+                      hover:bg-gray-100
+                      hover:text-gray-700
+                    "
+                    aria-label="Previous month"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={nextMonth}
+                    className="
+                      rounded-md
+                      p-1
+                      text-gray-400
+                      transition
+                      hover:bg-gray-100
+                      hover:text-gray-700
+                    "
+                    aria-label="Next month"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+
+                </div>
+
+              </div>
+
+              <div
+                className="
+                  grid
+                  grid-cols-7
+                  text-center
+                "
+              >
+
+                {[
+                  "Sun",
+                  "Mon",
+                  "Tue",
+                  "Wed",
+                  "Thu",
+                  "Fri",
+                  "Sat",
+                ].map((day) => (
+                  <div
+                    key={day}
+                    className="
+                      py-1.5
+                      text-[10px]
+                      font-semibold
+                      text-gray-400
+                    "
+                  >
+                    {day.slice(0, 1)}
+                  </div>
+                ))}
+
+                {calendarDays.map(
+                  (day, index) => (
+                    <div
+                      key={index}
+                      className="
+                        flex
+                        h-8
+                        items-center
+                        justify-center
+                      "
+                    >
+
+                      {day && (
+                        <div
+                          className={`
+                            relative
+                            flex
+                            h-7
+                            w-7
+                            items-center
+                            justify-center
+                            rounded-full
+                            text-[11px]
+                            transition
+                            ${
+                              isToday(day)
+                                ? "bg-purple-600 font-semibold text-white"
+                                : "text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                            }
+                          `}
+                        >
+
+                          {day}
+
+                          {hasTaskOnDate(day) &&
+                            !isToday(day) && (
+                              <span
+                                className="
+                                  absolute
+                                  bottom-0.5
+                                  h-1
+                                  w-1
+                                  rounded-full
+                                  bg-purple-500
+                                "
+                              />
+                            )}
+
+                        </div>
+                      )}
+
+                    </div>
+                  )
+                )}
+
+              </div>
+
+            </section>
+
+            {/* =================================
+                TASK PROGRESS
+            ================================== */}
+
+            <section
+              className="
+                rounded-2xl
+                border
+                border-gray-200
+                bg-white
+                p-4
+                shadow-sm
+              "
+            >
+
+              <div
+                className="
+                  flex
+                  items-center
+                  justify-between
+                "
+              >
+
+                <h2
+                  className="
+                    text-base
+                    font-bold
+                    text-gray-900
+                  "
+                >
+                  Task Progress
+                </h2>
+
+                <span
+                  className="
+                    text-sm
+                    font-bold
+                    text-purple-600
+                  "
+                >
+                  {completionPercentage}%
+                </span>
+
+              </div>
+
+              <div
+                className="
+                  mt-4
+                  flex
+                  items-center
+                  gap-5
+                "
+              >
+
+                {/* CIRCULAR PROGRESS */}
+
+                <div
+                  className="
+                    relative
+                    h-24
+                    w-24
+                    shrink-0
+                  "
+                >
+
+                  <svg
+                    className="
+                      h-24
+                      w-24
+                      -rotate-90
+                    "
+                    viewBox="0 0 100 100"
+                  >
+
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="10"
+                      className="text-gray-100"
+                    />
+
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="40"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="10"
+                      strokeLinecap="round"
+                      className="
+                        text-purple-600
+                        transition-all
+                        duration-500
+                      "
+                      strokeDasharray={251.2}
+                      strokeDashoffset={
+                        251.2 -
+                        (251.2 *
+                          completionPercentage) /
+                          100
+                      }
+                    />
+
+                  </svg>
+
+                  <div
+                    className="
+                      absolute
+                      inset-0
+                      flex
+                      items-center
+                      justify-center
+                    "
+                  >
+
+                    <span
+                      className="
+                        text-lg
+                        font-bold
+                        text-gray-800
+                      "
+                    >
+                      {completionPercentage}%
+                    </span>
+
+                  </div>
+
+                </div>
+
+                {/* PROGRESS DETAILS */}
+
+                <div
+                  className="
+                    min-w-0
+                    flex-1
+                    space-y-2.5
+                  "
+                >
+
+                  <div
+                    className="
+                      flex
+                      items-center
+                      justify-between
+                      gap-2
+                    "
+                  >
+
+                    <div className="flex items-center gap-2">
+
+                      <span
+                        className="
+                          h-2.5
+                          w-2.5
+                          rounded-full
+                          bg-green-500
+                        "
+                      />
+
+                      <span
+                        className="
+                          text-xs
+                          text-gray-500
+                        "
+                      >
+                        Completed
                       </span>
 
                     </div>
-                  ))}
+
+                    <span
+                      className="
+                        text-xs
+                        font-semibold
+                        text-gray-700
+                      "
+                    >
+                      {completedTasks}
+                    </span>
+
+                  </div>
+
+                  <div
+                    className="
+                      flex
+                      items-center
+                      justify-between
+                      gap-2
+                    "
+                  >
+
+                    <div className="flex items-center gap-2">
+
+                      <span
+                        className="
+                          h-2.5
+                          w-2.5
+                          rounded-full
+                          bg-orange-500
+                        "
+                      />
+
+                      <span
+                        className="
+                          text-xs
+                          text-gray-500
+                        "
+                      >
+                        In Progress
+                      </span>
+
+                    </div>
+
+                    <span
+                      className="
+                        text-xs
+                        font-semibold
+                        text-gray-700
+                      "
+                    >
+                      {inProgressTasks}
+                    </span>
+
+                  </div>
+
+                  <div
+                    className="
+                      flex
+                      items-center
+                      justify-between
+                      gap-2
+                    "
+                  >
+
+                    <div className="flex items-center gap-2">
+
+                      <span
+                        className="
+                          h-2.5
+                          w-2.5
+                          rounded-full
+                          bg-red-500
+                        "
+                      />
+
+                      <span
+                        className="
+                          text-xs
+                          text-gray-500
+                        "
+                      >
+                        Pending
+                      </span>
+
+                    </div>
+
+                    <span
+                      className="
+                        text-xs
+                        font-semibold
+                        text-gray-700
+                      "
+                    >
+                      {pendingTasks}
+                    </span>
+
+                  </div>
+
+                  <div
+                    className="
+                      flex
+                      items-center
+                      justify-between
+                      gap-2
+                      border-t
+                      border-gray-100
+                      pt-1
+                    "
+                  >
+
+                    <span
+                      className="
+                        text-xs
+                        text-gray-400
+                      "
+                    >
+                      Total
+                    </span>
+
+                    <span
+                      className="
+                        text-xs
+                        font-bold
+                        text-gray-800
+                      "
+                    >
+                      {totalTasks}
+                    </span>
+
+                  </div>
 
                 </div>
-              )}
 
-            </div>
+              </div>
 
-          </div>
+            </section>
+
+            {/* =================================
+                FOCUS CARD
+            ================================== */}
+
+            <section
+              className="
+                rounded-2xl
+                border
+                border-purple-100
+                bg-gradient-to-br
+                from-purple-50
+                to-white
+                p-4
+                shadow-sm
+              "
+            >
+
+              <div className="flex items-start gap-3">
+
+                <div
+                  className="
+                    flex
+                    h-10
+                    w-10
+                    shrink-0
+                    items-center
+                    justify-center
+                    rounded-xl
+                    bg-purple-100
+                    text-purple-600
+                  "
+                >
+                  <Target size={19} />
+                </div>
+
+                <div className="min-w-0">
+
+                  <h3
+                    className="
+                      text-sm
+                      font-bold
+                      leading-5
+                      text-gray-800
+                    "
+                  >
+                    Focus on progress,
+                    <br />
+                    not perfection.
+                  </h3>
+
+                  <div
+                    className="
+                      mt-3
+                      h-0.5
+                      w-10
+                      rounded-full
+                      bg-purple-500
+                    "
+                  />
+
+                </div>
+
+              </div>
+
+            </section>
+
+          </aside>
+
         </div>
       </div>
 
-      {/* =================================
+      {/* =====================================
           ADD TASK MODAL
-      ================================= */}
+      ====================================== */}
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+        <div
+          className="
+            fixed
+            inset-0
+            z-[100]
+            flex
+            items-center
+            justify-center
+            bg-black/50
+            p-4
+          "
+          onMouseDown={(event) => {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              setShowModal(false);
+            }
+          }}
+        >
 
-          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl">
+          <div
+            className="
+              max-h-[90vh]
+              w-full
+              max-w-lg
+              overflow-y-auto
+              rounded-2xl
+              bg-white
+              shadow-2xl
+            "
+          >
 
-            <div className="flex items-center justify-between p-5 border-b">
+            {/* MODAL HEADER */}
+
+            <div
+              className="
+                flex
+                items-center
+                justify-between
+                border-b
+                border-gray-100
+                px-5
+                py-4
+              "
+            >
 
               <div>
 
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2
+                  className="
+                    text-lg
+                    font-bold
+                    text-gray-900
+                  "
+                >
                   Add New Task
                 </h2>
 
-                <p className="text-gray-500 text-xs sm:text-sm mt-1">
-                  Create a new task for your workflow
+                <p
+                  className="
+                    mt-0.5
+                    text-xs
+                    text-gray-400
+                  "
+                >
+                  Create a new task for your
+                  workspace.
                 </p>
 
               </div>
 
               <button
                 type="button"
-                onClick={() => setShowModal(false)}
-                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
+                onClick={() =>
+                  setShowModal(false)
+                }
+                className="
+                  rounded-lg
+                  p-2
+                  text-gray-400
+                  transition
+                  hover:bg-gray-100
+                  hover:text-gray-700
+                "
+                aria-label="Close modal"
               >
                 <X size={18} />
               </button>
 
             </div>
 
+            {/* FORM */}
+
             <form
               onSubmit={handleCreateTask}
-              className="p-5 space-y-4"
+              className="space-y-4 p-5"
             >
 
               {/* TITLE */}
 
               <div>
 
-                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                <label
+                  className="
+                    mb-1.5
+                    block
+                    text-sm
+                    font-medium
+                    text-gray-700
+                  "
+                >
                   Task Title
                 </label>
 
                 <input
                   type="text"
-                  name="title"
-                  value={formData.title}
-                  onChange={handleChange}
-                  placeholder="e.g. Learn React"
-                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                  value={title}
+                  onChange={(event) =>
+                    setTitle(
+                      event.target.value
+                    )
+                  }
+                  placeholder="Enter task title"
+                  required
+                  className="
+                    w-full
+                    rounded-lg
+                    border
+                    border-gray-200
+                    px-3
+                    py-2.5
+                    text-sm
+                    outline-none
+                    transition
+                    focus:border-purple-500
+                    focus:ring-2
+                    focus:ring-purple-100
+                  "
                 />
 
               </div>
@@ -898,17 +1814,42 @@ function Dashboard() {
 
               <div>
 
-                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                <label
+                  className="
+                    mb-1.5
+                    block
+                    text-sm
+                    font-medium
+                    text-gray-700
+                  "
+                >
                   Description
                 </label>
 
                 <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleChange}
-                  placeholder="Describe your task..."
+                  value={description}
+                  onChange={(event) =>
+                    setDescription(
+                      event.target.value
+                    )
+                  }
+                  placeholder="Enter task description"
                   rows="3"
-                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none resize-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                  className="
+                    w-full
+                    resize-none
+                    rounded-lg
+                    border
+                    border-gray-200
+                    px-3
+                    py-2.5
+                    text-sm
+                    outline-none
+                    transition
+                    focus:border-purple-500
+                    focus:ring-2
+                    focus:ring-purple-100
+                  "
                 />
 
               </div>
@@ -917,15 +1858,39 @@ function Dashboard() {
 
               <div>
 
-                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                <label
+                  className="
+                    mb-1.5
+                    block
+                    text-sm
+                    font-medium
+                    text-gray-700
+                  "
+                >
                   Priority
                 </label>
 
                 <select
-                  name="priority"
-                  value={formData.priority}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                  value={priority}
+                  onChange={(event) =>
+                    setPriority(
+                      event.target.value
+                    )
+                  }
+                  className="
+                    w-full
+                    rounded-lg
+                    border
+                    border-gray-200
+                    px-3
+                    py-2.5
+                    text-sm
+                    outline-none
+                    transition
+                    focus:border-purple-500
+                    focus:ring-2
+                    focus:ring-purple-100
+                  "
                 >
 
                   <option value="low">
@@ -948,48 +1913,109 @@ function Dashboard() {
 
               <div>
 
-                <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1.5">
+                <label
+                  className="
+                    mb-1.5
+                    block
+                    text-sm
+                    font-medium
+                    text-gray-700
+                  "
+                >
                   Due Date
                 </label>
 
                 <input
                   type="date"
-                  name="dueDate"
-                  value={formData.dueDate}
-                  onChange={handleChange}
-                  className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-100"
+                  value={dueDate}
+                  onChange={(event) =>
+                    setDueDate(
+                      event.target.value
+                    )
+                  }
+                  className="
+                    w-full
+                    rounded-lg
+                    border
+                    border-gray-200
+                    px-3
+                    py-2.5
+                    text-sm
+                    outline-none
+                    transition
+                    focus:border-purple-500
+                    focus:ring-2
+                    focus:ring-purple-100
+                  "
                 />
 
               </div>
 
               {/* BUTTONS */}
 
-              <div className="flex gap-3 pt-1">
+              <div
+                className="
+                  flex
+                  flex-col-reverse
+                  gap-2.5
+                  pt-1
+                  sm:flex-row
+                  sm:justify-end
+                "
+              >
 
                 <button
                   type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 border border-gray-200 text-gray-700 py-2.5 rounded-xl text-sm font-semibold hover:bg-gray-50"
+                  onClick={() =>
+                    setShowModal(false)
+                  }
+                  className="
+                    rounded-lg
+                    border
+                    border-gray-200
+                    px-4
+                    py-2.5
+                    text-sm
+                    font-medium
+                    text-gray-600
+                    transition
+                    hover:bg-gray-50
+                  "
                 >
                   Cancel
                 </button>
 
                 <button
                   type="submit"
-                  disabled={saving}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white py-2.5 rounded-xl text-sm font-semibold"
+                  disabled={loading}
+                  className="
+                    rounded-lg
+                    bg-purple-600
+                    px-5
+                    py-2.5
+                    text-sm
+                    font-semibold
+                    text-white
+                    transition
+                    hover:bg-purple-700
+                    disabled:cursor-not-allowed
+                    disabled:opacity-60
+                  "
                 >
-                  {saving
-                    ? "Creating..."
-                    : "Create Task"}
+                  {loading
+                    ? "Adding..."
+                    : "Add Task"}
                 </button>
 
               </div>
 
             </form>
+
           </div>
+
         </div>
       )}
+
     </Layout>
   );
 }
