@@ -21,7 +21,22 @@ import API_URL from "../config.js";
 function Dashboard() {
   const [tasks, setTasks] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filter, setFilter] = useState("all");
+
+  // ==========================================
+  // TOP FILTER
+  // All / Today / Week / High / Medium / Low
+  // ==========================================
+
+  const [datePriorityFilter, setDatePriorityFilter] =
+    useState("all");
+
+  // ==========================================
+  // STATUS FILTER
+  // All / Pending / In Progress / Completed
+  // ==========================================
+
+  const [statusFilter, setStatusFilter] =
+    useState("all");
 
   const [showModal, setShowModal] = useState(false);
 
@@ -267,7 +282,16 @@ function Dashboard() {
         );
 
   // ==========================================
-  // SEARCH + FILTER
+  // STAT CARD CLICK
+  // ==========================================
+
+  const handleStatusCardClick = (status) => {
+    setDatePriorityFilter("all");
+    setStatusFilter(status);
+  };
+
+  // ==========================================
+  // SEARCH + TOP FILTER + STATUS FILTER
   // ==========================================
 
   const filteredTasks = useMemo(() => {
@@ -275,7 +299,79 @@ function Dashboard() {
       .toLowerCase()
       .trim();
 
+    const now = new Date();
+
+    // ------------------------------------------
+    // START OF CURRENT WEEK
+    // Monday
+    // ------------------------------------------
+
+    const startOfWeek = new Date(now);
+
+    const currentDay =
+      startOfWeek.getDay();
+
+    const mondayOffset =
+      currentDay === 0
+        ? -6
+        : 1 - currentDay;
+
+    startOfWeek.setDate(
+      startOfWeek.getDate() +
+        mondayOffset
+    );
+
+    startOfWeek.setHours(
+      0,
+      0,
+      0,
+      0
+    );
+
+    // ------------------------------------------
+    // END OF CURRENT WEEK
+    // Sunday
+    // ------------------------------------------
+
+    const endOfWeek = new Date(
+      startOfWeek
+    );
+
+    endOfWeek.setDate(
+      endOfWeek.getDate() + 6
+    );
+
+    endOfWeek.setHours(
+      23,
+      59,
+      59,
+      999
+    );
+
+    // ------------------------------------------
+    // SAME DAY
+    // ------------------------------------------
+
+    const isSameDay = (
+      date1,
+      date2
+    ) => {
+      return (
+        date1.getFullYear() ===
+          date2.getFullYear() &&
+        date1.getMonth() ===
+          date2.getMonth() &&
+        date1.getDate() ===
+          date2.getDate()
+      );
+    };
+
+    // ------------------------------------------
+    // FILTER
+    // ------------------------------------------
+
     return tasks.filter((task) => {
+      // SEARCH
       const matchesSearch =
         !search ||
         task.title
@@ -285,28 +381,111 @@ function Dashboard() {
           ?.toLowerCase()
           .includes(search);
 
-      const matchesFilter =
-        filter === "all" ||
-        (filter === "pending" &&
-          task.status === "pending") ||
-        (filter === "in-progress" &&
-          task.status === "in-progress") ||
-        (filter === "completed" &&
-          task.status === "completed");
+      // ----------------------------------------
+      // TOP FILTER
+      // ----------------------------------------
+
+      let matchesTopFilter = true;
+
+      if (
+        datePriorityFilter === "today"
+      ) {
+        if (!task.dueDate) {
+          matchesTopFilter = false;
+        } else {
+          matchesTopFilter = isSameDay(
+            new Date(task.dueDate),
+            now
+          );
+        }
+      }
+
+      if (
+        datePriorityFilter === "week"
+      ) {
+        if (!task.dueDate) {
+          matchesTopFilter = false;
+        } else {
+          const taskDate = new Date(
+            task.dueDate
+          );
+
+          matchesTopFilter =
+            taskDate >= startOfWeek &&
+            taskDate <= endOfWeek;
+        }
+      }
+
+      if (
+        datePriorityFilter === "high"
+      ) {
+        matchesTopFilter =
+          task.priority === "high";
+      }
+
+      if (
+        datePriorityFilter === "medium"
+      ) {
+        matchesTopFilter =
+          task.priority === "medium";
+      }
+
+      if (
+        datePriorityFilter === "low"
+      ) {
+        matchesTopFilter =
+          task.priority === "low";
+      }
+
+      // ----------------------------------------
+      // STATUS FILTER
+      // ----------------------------------------
+
+      let matchesStatusFilter = true;
+
+      if (
+        statusFilter === "pending"
+      ) {
+        matchesStatusFilter =
+          task.status === "pending";
+      }
+
+      if (
+        statusFilter === "in-progress"
+      ) {
+        matchesStatusFilter =
+          task.status === "in-progress";
+      }
+
+      if (
+        statusFilter === "completed"
+      ) {
+        matchesStatusFilter =
+          task.status === "completed";
+      }
 
       return (
         matchesSearch &&
-        matchesFilter
+        matchesTopFilter &&
+        matchesStatusFilter
       );
     });
-  }, [tasks, searchTerm, filter]);
+  }, [
+    tasks,
+    searchTerm,
+    datePriorityFilter,
+    statusFilter,
+  ]);
 
   // ==========================================
   // CALENDAR
   // ==========================================
 
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
+  const year =
+    currentDate.getFullYear();
+
+  const month =
+    currentDate.getMonth();
 
   const firstDay = new Date(
     year,
@@ -322,7 +501,11 @@ function Dashboard() {
 
   const calendarDays = [];
 
-  for (let i = 0; i < firstDay; i++) {
+  for (
+    let i = 0;
+    i < firstDay;
+    i++
+  ) {
     calendarDays.push(null);
   }
 
@@ -334,22 +517,31 @@ function Dashboard() {
     calendarDays.push(day);
   }
 
-  const monthName = currentDate.toLocaleString(
-    "default",
-    {
-      month: "long",
-    }
-  );
+  const monthName =
+    currentDate.toLocaleString(
+      "default",
+      {
+        month: "long",
+      }
+    );
 
   const previousMonth = () => {
     setCurrentDate(
-      new Date(year, month - 1, 1)
+      new Date(
+        year,
+        month - 1,
+        1
+      )
     );
   };
 
   const nextMonth = () => {
     setCurrentDate(
-      new Date(year, month + 1, 1)
+      new Date(
+        year,
+        month + 1,
+        1
+      )
     );
   };
 
@@ -385,7 +577,9 @@ function Dashboard() {
         return false;
       }
 
-      const date = new Date(task.dueDate);
+      const date = new Date(
+        task.dueDate
+      );
 
       return (
         date.getDate() === day &&
@@ -404,7 +598,9 @@ function Dashboard() {
       return "No due date";
     }
 
-    return new Date(date).toLocaleDateString(
+    return new Date(
+      date
+    ).toLocaleDateString(
       "en-IN",
       {
         day: "numeric",
@@ -418,12 +614,18 @@ function Dashboard() {
   // PRIORITY STYLE
   // ==========================================
 
-  const getPriorityClass = (taskPriority) => {
-    if (taskPriority === "high") {
+  const getPriorityClass = (
+    taskPriority
+  ) => {
+    if (
+      taskPriority === "high"
+    ) {
       return "bg-red-50 text-red-600";
     }
 
-    if (taskPriority === "medium") {
+    if (
+      taskPriority === "medium"
+    ) {
       return "bg-amber-50 text-amber-600";
     }
 
@@ -436,6 +638,7 @@ function Dashboard() {
 
   return (
     <Layout activePage="Dashboard">
+
       <div className="mx-auto w-full max-w-[1500px]">
 
         {/* =====================================
@@ -443,6 +646,7 @@ function Dashboard() {
         ====================================== */}
 
         <div className="mb-4">
+
           <div className="relative w-full max-w-[470px]">
 
             <Search
@@ -487,6 +691,7 @@ function Dashboard() {
             />
 
           </div>
+
         </div>
 
         {/* =====================================
@@ -540,29 +745,22 @@ function Dashboard() {
 
                 <div className="min-w-0">
 
-                  <div className="flex items-center gap-2">
+                  {/* 👋 REMOVED */}
 
-                    <span className="text-2xl">
-                      👋
-                    </span>
-
-                    <h1
-                      className="
-                        truncate
-                        text-2xl
-                        font-bold
-                        tracking-tight
-                        text-gray-900
-                      "
-                    >
-                      Hello, {userName}!
-                    </h1>
-
-                  </div>
+                  <h1
+                    className="
+                      truncate
+                      text-2xl
+                      font-bold
+                      tracking-tight
+                      text-gray-900
+                    "
+                  >
+                    Hello, {userName}!
+                  </h1>
 
                   <p
                     className="
-                      ml-9
                       mt-1
                       text-sm
                       text-gray-500
@@ -625,6 +823,13 @@ function Dashboard() {
                 icon={ListTodo}
                 iconBg="bg-purple-100"
                 iconColor="text-purple-600"
+                active={
+                  statusFilter === "all" &&
+                  datePriorityFilter === "all"
+                }
+                onClick={() =>
+                  handleStatusCardClick("all")
+                }
               />
 
               <StatsCard
@@ -633,6 +838,14 @@ function Dashboard() {
                 icon={CheckCircle2}
                 iconBg="bg-green-100"
                 iconColor="text-green-600"
+                active={
+                  statusFilter === "completed"
+                }
+                onClick={() =>
+                  handleStatusCardClick(
+                    "completed"
+                  )
+                }
               />
 
               <StatsCard
@@ -641,6 +854,14 @@ function Dashboard() {
                 icon={Clock3}
                 iconBg="bg-orange-100"
                 iconColor="text-orange-600"
+                active={
+                  statusFilter === "in-progress"
+                }
+                onClick={() =>
+                  handleStatusCardClick(
+                    "in-progress"
+                  )
+                }
               />
 
               <StatsCard
@@ -649,7 +870,137 @@ function Dashboard() {
                 icon={Target}
                 iconBg="bg-red-100"
                 iconColor="text-red-500"
+                active={
+                  statusFilter === "pending"
+                }
+                onClick={() =>
+                  handleStatusCardClick(
+                    "pending"
+                  )
+                }
               />
+
+            </section>
+
+            {/* =================================
+                TOP FILTERS
+            ================================== */}
+
+            <section
+              className="
+                mb-4
+                overflow-hidden
+                rounded-xl
+                border
+                border-gray-200
+                bg-white
+                shadow-sm
+              "
+            >
+
+              <div
+                className="
+                  flex
+                  flex-col
+                  gap-3
+                  px-4
+                  py-3
+                  sm:flex-row
+                  sm:items-center
+                  sm:justify-between
+                "
+              >
+
+                <div className="flex items-center gap-2">
+
+                  <Target
+                    size={19}
+                    className="text-purple-600"
+                  />
+
+                  <h2
+                    className="
+                      text-base
+                      font-semibold
+                      text-gray-900
+                    "
+                  >
+                    All Tasks
+                  </h2>
+
+                </div>
+
+                <div
+                  className="
+                    flex
+                    w-full
+                    overflow-x-auto
+                    rounded-lg
+                    bg-purple-50
+                    p-1
+                    sm:w-auto
+                  "
+                >
+
+                  {[
+                    {
+                      value: "all",
+                      label: "All",
+                    },
+                    {
+                      value: "today",
+                      label: "Today",
+                    },
+                    {
+                      value: "week",
+                      label: "Week",
+                    },
+                    {
+                      value: "high",
+                      label: "High",
+                    },
+                    {
+                      value: "medium",
+                      label: "Medium",
+                    },
+                    {
+                      value: "low",
+                      label: "Low",
+                    },
+                  ].map((item) => (
+
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() =>
+                        setDatePriorityFilter(
+                          item.value
+                        )
+                      }
+                      className={`
+                        whitespace-nowrap
+                        rounded-md
+                        px-3
+                        py-1.5
+                        text-xs
+                        font-medium
+                        transition
+                        ${
+                          datePriorityFilter ===
+                          item.value
+                            ? "bg-purple-600 text-white shadow-sm"
+                            : "text-gray-600 hover:text-gray-900"
+                        }
+                      `}
+                    >
+                      {item.label}
+                    </button>
+
+                  ))}
+
+                </div>
+
+              </div>
 
             </section>
 
@@ -737,7 +1088,7 @@ function Dashboard() {
 
                 </div>
 
-                {/* FILTERS */}
+                {/* STATUS FILTERS */}
 
                 <div
                   className="
@@ -750,101 +1101,54 @@ function Dashboard() {
                   "
                 >
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFilter("all")
-                    }
-                    className={`
-                      flex-1
-                      whitespace-nowrap
-                      rounded-md
-                      px-3
-                      py-1.5
-                      text-xs
-                      font-medium
-                      transition
-                      ${
-                        filter === "all"
-                          ? "bg-purple-600 text-white shadow-sm"
-                          : "text-gray-500 hover:text-gray-800"
-                      }
-                    `}
-                  >
-                    All
-                  </button>
+                  {[
+                    {
+                      value: "all",
+                      label: "All",
+                    },
+                    {
+                      value: "pending",
+                      label: "Pending",
+                    },
+                    {
+                      value: "in-progress",
+                      label: "In Progress",
+                    },
+                    {
+                      value: "completed",
+                      label: "Completed",
+                    },
+                  ].map((item) => (
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFilter("pending")
-                    }
-                    className={`
-                      flex-1
-                      whitespace-nowrap
-                      rounded-md
-                      px-3
-                      py-1.5
-                      text-xs
-                      font-medium
-                      transition
-                      ${
-                        filter === "pending"
-                          ? "bg-purple-600 text-white shadow-sm"
-                          : "text-gray-500 hover:text-gray-800"
+                    <button
+                      key={item.value}
+                      type="button"
+                      onClick={() =>
+                        setStatusFilter(
+                          item.value
+                        )
                       }
-                    `}
-                  >
-                    Pending
-                  </button>
+                      className={`
+                        flex-1
+                        whitespace-nowrap
+                        rounded-md
+                        px-3
+                        py-1.5
+                        text-xs
+                        font-medium
+                        transition
+                        ${
+                          statusFilter ===
+                          item.value
+                            ? "bg-purple-600 text-white shadow-sm"
+                            : "text-gray-500 hover:text-gray-800"
+                        }
+                      `}
+                    >
+                      {item.label}
+                    </button>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFilter("in-progress")
-                    }
-                    className={`
-                      flex-1
-                      whitespace-nowrap
-                      rounded-md
-                      px-3
-                      py-1.5
-                      text-xs
-                      font-medium
-                      transition
-                      ${
-                        filter === "in-progress"
-                          ? "bg-purple-600 text-white shadow-sm"
-                          : "text-gray-500 hover:text-gray-800"
-                      }
-                    `}
-                  >
-                    In Progress
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFilter("completed")
-                    }
-                    className={`
-                      flex-1
-                      whitespace-nowrap
-                      rounded-md
-                      px-3
-                      py-1.5
-                      text-xs
-                      font-medium
-                      transition
-                      ${
-                        filter === "completed"
-                          ? "bg-purple-600 text-white shadow-sm"
-                          : "text-gray-500 hover:text-gray-800"
-                      }
-                    `}
-                  >
-                    Completed
-                  </button>
+                  ))}
 
                 </div>
 
@@ -855,6 +1159,7 @@ function Dashboard() {
               <div className="divide-y divide-gray-100">
 
                 {filteredTasks.length === 0 ? (
+
                   <div
                     className="
                       px-5
@@ -905,8 +1210,11 @@ function Dashboard() {
                     </p>
 
                   </div>
+
                 ) : (
+
                   filteredTasks.map((task) => (
+
                     <div
                       key={task._id}
                       className="
@@ -943,11 +1251,14 @@ function Dashboard() {
 
                         {task.status ===
                         "completed" ? (
+
                           <CheckCircle2
                             size={21}
                             className="text-green-500"
                           />
+
                         ) : (
+
                           <Circle
                             size={21}
                             className="
@@ -956,6 +1267,7 @@ function Dashboard() {
                               group-hover:text-purple-400
                             "
                           />
+
                         )}
 
                       </button>
@@ -1019,6 +1331,7 @@ function Dashboard() {
                         >
 
                           {task.description && (
+
                             <p
                               className="
                                 hidden
@@ -1031,6 +1344,7 @@ function Dashboard() {
                             >
                               {task.description}
                             </p>
+
                           )}
 
                           <div
@@ -1044,7 +1358,9 @@ function Dashboard() {
                             "
                           >
 
-                            <CalendarDays size={12} />
+                            <CalendarDays
+                              size={12}
+                            />
 
                             <span>
                               {formatDueDate(
@@ -1062,6 +1378,7 @@ function Dashboard() {
 
                       {task.status ===
                         "in-progress" && (
+
                         <span
                           className="
                             hidden
@@ -1078,6 +1395,7 @@ function Dashboard() {
                         >
                           In Progress
                         </span>
+
                       )}
 
                       {/* DELETE */}
@@ -1105,7 +1423,9 @@ function Dashboard() {
                       </button>
 
                     </div>
+
                   ))
+
                 )}
 
               </div>
@@ -1209,6 +1529,7 @@ function Dashboard() {
                   "Fri",
                   "Sat",
                 ].map((day) => (
+
                   <div
                     key={day}
                     className="
@@ -1220,10 +1541,12 @@ function Dashboard() {
                   >
                     {day.slice(0, 1)}
                   </div>
+
                 ))}
 
                 {calendarDays.map(
                   (day, index) => (
+
                     <div
                       key={index}
                       className="
@@ -1235,6 +1558,7 @@ function Dashboard() {
                     >
 
                       {day && (
+
                         <div
                           className={`
                             relative
@@ -1258,6 +1582,7 @@ function Dashboard() {
 
                           {hasTaskOnDate(day) &&
                             !isToday(day) && (
+
                               <span
                                 className="
                                   absolute
@@ -1268,12 +1593,15 @@ function Dashboard() {
                                   bg-purple-500
                                 "
                               />
+
                             )}
 
                         </div>
+
                       )}
 
                     </div>
+
                   )
                 )}
 
@@ -1660,6 +1988,7 @@ function Dashboard() {
           </aside>
 
         </div>
+
       </div>
 
       {/* =====================================
@@ -1667,6 +1996,7 @@ function Dashboard() {
       ====================================== */}
 
       {showModal && (
+
         <div
           className="
             fixed
@@ -2014,6 +2344,7 @@ function Dashboard() {
           </div>
 
         </div>
+
       )}
 
     </Layout>
